@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -16,10 +17,22 @@ type Candidate struct {
 	Loopback bool
 }
 
-var wellKnown = []Candidate{
-	{ID: "ollama", BaseURL: "http://127.0.0.1:11434/v1", Loopback: true},
-	{ID: "lm-studio", BaseURL: "http://127.0.0.1:1234/v1", Loopback: true},
-	{ID: "llama.cpp", BaseURL: "http://127.0.0.1:8080/v1", Loopback: true},
+var wellKnown = defaultCandidates(runtime.GOOS)
+
+func defaultCandidates(goos string) []Candidate {
+	candidates := []Candidate{
+		{ID: "ollama", BaseURL: "http://127.0.0.1:11434/v1", Loopback: true},
+		{ID: "lm-studio", BaseURL: "http://127.0.0.1:1234/v1", Loopback: true},
+		{ID: "llama.cpp", BaseURL: "http://127.0.0.1:8080/v1", Loopback: true},
+	}
+	if goos == "darwin" {
+		candidates = append(candidates, Candidate{
+			ID:       "omlx",
+			BaseURL:  "http://127.0.0.1:8000/v1",
+			Loopback: true,
+		})
+	}
+	return candidates
 }
 
 // ProbeResult captures the startup status of one candidate.

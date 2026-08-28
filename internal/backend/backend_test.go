@@ -184,6 +184,32 @@ func TestNormalizeBaseURL(t *testing.T) {
 	}
 }
 
+func TestDefaultCandidatesIncludeOMLXOnlyOnMacOS(t *testing.T) {
+	darwin := defaultCandidates("darwin")
+	omlx, ok := findCandidate(darwin, "omlx")
+	if !ok {
+		t.Fatal("Darwin candidates must include oMLX")
+	}
+	if omlx.BaseURL != "http://127.0.0.1:8000/v1" || !omlx.Loopback {
+		t.Fatalf("oMLX candidate = %+v", omlx)
+	}
+
+	for _, goos := range []string{"linux", "windows"} {
+		if _, ok := findCandidate(defaultCandidates(goos), "omlx"); ok {
+			t.Fatalf("%s candidates must not auto-detect macOS-only oMLX", goos)
+		}
+	}
+}
+
+func findCandidate(candidates []Candidate, id string) (Candidate, bool) {
+	for _, candidate := range candidates {
+		if candidate.ID == id {
+			return candidate, true
+		}
+	}
+	return Candidate{}, false
+}
+
 func TestDiscoverKeepsOfflineCandidates(t *testing.T) {
 	original := wellKnown
 	wellKnown = []Candidate{{ID: "offline", BaseURL: "http://127.0.0.1:1/v1", Loopback: true}}
