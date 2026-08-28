@@ -38,7 +38,13 @@ func (b *Backend) Models(timeout time.Duration) ([]string, error) {
 	}
 	request.Header.Set("Accept", "application/json")
 
-	response, err := (&http.Client{Timeout: timeout}).Do(request)
+	client := &http.Client{
+		Timeout: timeout,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("query %s models: %w", b.ID, err)
 	}

@@ -71,6 +71,27 @@ func TestProbeDownBackend(t *testing.T) {
 	}
 }
 
+func TestProbeDoesNotFollowRedirects(t *testing.T) {
+	var followed atomic.Bool
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		followed.Store(true)
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	}))
+	t.Cleanup(target.Close)
+	redirect := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL, http.StatusTemporaryRedirect)
+	}))
+	t.Cleanup(redirect.Close)
+
+	item := &Backend{ID: "redirect", BaseURL: redirect.URL}
+	if _, err := item.Models(500 * time.Millisecond); err == nil {
+		t.Fatal("Models() should reject redirects")
+	}
+	if followed.Load() {
+		t.Fatal("Models() followed redirect outside the fixed models path")
+	}
+}
+
 func TestRegistryListCacheAndResolve(t *testing.T) {
 	var requests atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

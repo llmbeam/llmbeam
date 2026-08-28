@@ -23,12 +23,19 @@ type Server struct {
 	registry *backend.Registry
 	limiter  *pair.RateLimiter
 	static   fs.FS
+	upstream *http.Client
 }
 
 // New constructs a gateway server. static may be nil in API-only tests and
 // development builds where the web UI has not been compiled yet.
 func New(pairs *pair.Manager, registry *backend.Registry, limiter *pair.RateLimiter, static fs.FS) *Server {
-	return &Server{pairs: pairs, registry: registry, limiter: limiter, static: static}
+	return &Server{
+		pairs:    pairs,
+		registry: registry,
+		limiter:  limiter,
+		static:   static,
+		upstream: newUpstreamClient(),
+	}
 }
 
 // Handler builds the complete HTTP handler with security middleware.
