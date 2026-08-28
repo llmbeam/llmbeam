@@ -25,6 +25,7 @@ export async function hasSession(): Promise<boolean> {
 
 export async function listModels(): Promise<ModelInfo[]> {
   const response = await fetch('/api/models')
+  if (response.status === 401) throw new Error('unauthenticated')
   if (!response.ok) throw new Error(`models failed: ${response.status}`)
 
   const payload = (await response.json()) as { models?: ModelInfo[] }
@@ -64,6 +65,7 @@ export async function streamChat(
   }
 
   if (buffer && consumeEvent(buffer, onDelta)) return
+  throw new Error('chat stream ended unexpectedly')
 }
 
 function consumeEvent(event: string, onDelta: (text: string) => void): boolean {

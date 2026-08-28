@@ -1,6 +1,7 @@
 import { render } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { hasSession } from './api'
+import { Chat } from './chat'
 import { Pair } from './pair'
 import './style.css'
 
@@ -57,7 +58,7 @@ function App() {
   }
 
   if (route.page === 'pair') return <Pair code={route.code} onPaired={paired} />
-  if (route.page === 'chat') return <ChatPlaceholder />
+  if (route.page === 'chat') return <Chat />
   return <CheckingSession />
 }
 
@@ -69,19 +70,6 @@ function CheckingSession() {
         <span class="spinner" aria-hidden="true" />
         Checking session…
       </div>
-    </main>
-  )
-}
-
-function ChatPlaceholder() {
-  return (
-    <main class="center">
-      <section class="chat-ready">
-        <div class="mark" aria-hidden="true">sc</div>
-        <p class="eyebrow">Connected</p>
-        <h1>Ready to chat</h1>
-        <p>The streaming chat interface arrives in the next implementation step.</p>
-      </section>
     </main>
   )
 }
