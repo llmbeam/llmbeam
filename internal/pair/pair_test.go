@@ -56,6 +56,21 @@ func TestExpiredCodeFailsAndRotates(t *testing.T) {
 	}
 }
 
+func TestCodeUpdatesPublishInitialAndRotatedCodes(t *testing.T) {
+	m := NewManager(time.Minute)
+	initial := <-m.CodeUpdates()
+	if initial.Code != m.Code() || !initial.Expires.Equal(m.CodeExpiry()) {
+		t.Fatalf("initial update = %+v", initial)
+	}
+	if _, ok := m.Redeem(initial.Code, "device", "ip"); !ok {
+		t.Fatal("redeem failed")
+	}
+	rotated := <-m.CodeUpdates()
+	if rotated.Code == initial.Code || rotated.Expires.Before(initial.Expires) {
+		t.Fatalf("rotated update = %+v, initial = %+v", rotated, initial)
+	}
+}
+
 func TestSessionLookupAndSnapshot(t *testing.T) {
 	m := NewManager(time.Minute)
 	session, ok := m.Redeem(m.Code(), "iPhone", "192.168.1.87")

@@ -27,6 +27,12 @@ type Session struct {
 	Created time.Time
 }
 
+// CodeUpdate is published whenever the active pairing code changes.
+type CodeUpdate struct {
+	Code    string
+	Expires time.Time
+}
+
 // Manager owns the current pairing code and all active in-memory sessions.
 type Manager struct {
 	mu       sync.Mutex
@@ -34,6 +40,7 @@ type Manager struct {
 	codeExp  time.Time
 	ttl      time.Duration
 	sessions map[string]Session
+	updates  chan CodeUpdate
 	now      func() time.Time
 	random   io.Reader
 }
@@ -47,11 +54,18 @@ func newManager(ttl time.Duration, now func() time.Time, random io.Reader) *Mana
 	m := &Manager{
 		ttl:      ttl,
 		sessions: make(map[string]Session),
+		updates:  make(chan CodeUpdate, 1),
 		now:      now,
 		random:   random,
 	}
 	m.rotateLocked(now())
 	return m
+}
+
+// CodeUpdates returns the single-consumer stream of pairing code rotations.
+// The channel always retains the latest state, including the initial code.
+func (m *Manager) CodeUpdates() <-chan CodeUpdate {
+	return m.updates
 }
 
 // Code returns the current pairing code, rotating it first if it has expired.
@@ -142,8 +156,23 @@ func (m *Manager) rotateLocked(now time.Time) {
 		}
 		m.code = candidate
 		m.codeExp = now.Add(m.ttl)
+		m.publishCodeLocked()
 		return
 	}
+}
+
+func (m *Manager) publishCodeLocked() {
+	update := CodeUpdate{Code: m.code, Expires: m.codeExp}
+	select {
+	case m.updates <- update:
+		return
+	default:
+	}
+	select {
+	case <-m.updates:
+	default:
+	}
+	m.updates <- update
 }
 
 func (m *Manager) randomCode() string {
