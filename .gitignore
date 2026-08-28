@@ -1,0 +1,7 @@
+/scanchat
+/dist/
+/web/node_modules/
+
+# Local editor and OS files.
+.DS_Store
+*.swp
