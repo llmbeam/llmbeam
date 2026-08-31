@@ -1,101 +1,242 @@
-# scanchat — *One binary. Any local LLM. Scan and chat.*
+<h1 align="center">scanchat</h1>
 
-![demo](docs/demo.gif)
-<!-- TODO: Record a <=15-second, <=5 MB GIF showing `scanchat` in a terminal, the QR code appearing, a phone scanning it, and a reply streaming in. -->
+<p align="center"><strong>One binary. Any local LLM. Scan and chat.</strong></p>
 
-- No app, no account, and no Docker: run one binary and open the browser already on your phone.
-- Works with Ollama, LM Studio, llama.cpp, and any OpenAI-compatible server.
-- Uses one-time QR pairing, restart-revocable in-memory sessions, and loopback-only auto-discovered backends.
+<p align="center">
+  Turn Ollama, LM Studio, llama.cpp, or any OpenAI-compatible server into a private mobile chat UI in seconds.
+</p>
 
-## Install
+<p align="center">
+  <a href="https://github.com/shao-hua-li/scanchat/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/shao-hua-li/scanchat/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://go.dev/"><img alt="Go 1.22+" src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-7c3aed?style=flat-square"></a>
+  <a href="https://github.com/shao-hua-li/scanchat/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/shao-hua-li/scanchat?style=social"></a>
+</p>
 
-The Homebrew tap and install script below are placeholders for the first public release. Until then, use a release archive or `go install`.
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#why-scanchat">Why scanchat?</a> ·
+  <a href="#security-without-hand-waving">Security</a> ·
+  <a href="#faq">FAQ</a>
+</p>
 
-### Homebrew
+<!-- Before launch, add a 10–15 second, <=5 MB demo GIF here: terminal -> QR -> phone -> streaming reply. -->
 
-```sh
-brew install shao-hua-li/tap/scanchat
+Your local model is already running on the most powerful machine you own. Why install another app, create an account, or type IP addresses just to use it from the couch?
+
+**scanchat is the missing last meter.** Run one ~10 MB binary, scan the QR code, and start chatting from the browser already on your phone. No Docker. No cloud relay. No runtime dependencies.
+
+```text
+$ scanchat
+
+  Discovered backends:
+    ✓ ollama      http://127.0.0.1:11434/v1   (3 models)
+
+  Scan with your phone (same Wi-Fi):
+
+  █▀▀▀▀▀█  ▀▄█  █▀▀▀▀▀█
+  █ ███ █  █▀▄  █ ███ █
+  █ ▀▀▀ █  ▄██  █ ▀▀▀ █
+  ▀▀▀▀▀▀▀  ▀ ▀  ▀▀▀▀▀▀▀
+
+  Or open http://192.168.1.42:8442 and enter code 7KQ2-M9XF
 ```
 
-### Install script
+## Quick start
 
-```sh
-curl -fsSL https://scanchat.dev/install.sh | sh
-```
+### 1. Install
 
-### Release archives
-
-Download the matching archive from [GitHub Releases](https://github.com/shao-hua-li/scanchat/releases/latest):
-
-| Platform | Architecture | Archive |
-| --- | --- | --- |
-| macOS | Apple Silicon | `scanchat_VERSION_darwin_arm64.tar.gz` |
-| macOS | Intel | `scanchat_VERSION_darwin_amd64.tar.gz` |
-| Linux | ARM64 | `scanchat_VERSION_linux_arm64.tar.gz` |
-| Linux | x86-64 | `scanchat_VERSION_linux_amd64.tar.gz` |
-| Windows | ARM64 | `scanchat_VERSION_windows_arm64.zip` |
-| Windows | x86-64 | `scanchat_VERSION_windows_amd64.zip` |
-
-### Go
-
-Requires Go 1.22 or newer:
+Download a prebuilt binary for macOS, Linux, or Windows from [Releases](https://github.com/shao-hua-li/scanchat/releases/latest), or install with Go 1.22+:
 
 ```sh
 go install github.com/shao-hua-li/scanchat@latest
 ```
 
-## Quick start
+To build from source:
+
+Source builds require Go 1.22+ and Node.js 22; neither is needed to run a prebuilt binary.
+
+```sh
+git clone https://github.com/shao-hua-li/scanchat.git
+cd scanchat
+make build
+```
+
+### 2. Start your local model server
+
+For example, with Ollama:
 
 ```sh
 ollama serve
-scanchat
-# Scan the QR code with your phone.
 ```
 
-Keep the terminal open. Your phone and computer must be on the same Wi-Fi network. Run `scanchat --help` to see options for the port, pairing-code lifetime, QR output, and additional OpenAI-compatible backends.
+LM Studio and llama.cpp users can start their normal local server instead. scanchat discovers them automatically.
+
+### 3. Scan and chat
+
+```sh
+scanchat
+```
+
+Scan the QR code with an iPhone or Android phone on the same Wi-Fi. The browser pairs automatically, shows every discovered model, and streams replies token by token.
+
+## Why scanchat?
+
+| What you want | What scanchat does |
+| --- | --- |
+| Use your local LLM from the sofa | Opens a touch-friendly web UI on any phone |
+| Start now, not after a deployment | Ships the Go server and Preact UI in one static binary |
+| Keep your existing model stack | Speaks the standard OpenAI `/models` and `/chat/completions` APIs |
+| Avoid fiddly mobile setup | Encodes the LAN address and one-time pairing code in a QR |
+| See the answer immediately | Proxies upstream SSE without buffering the full response |
+| Keep local inference local | Auto-discovered backends are loopback-only; no cloud service is involved |
+
+Other useful details:
+
+- **Automatic discovery:** Ollama, LM Studio, llama.cpp, and OMLX on macOS.
+- **Multiple backends:** choose namespaced models such as `ollama/llama3.2` or `lm-studio/qwen2.5` from one picker.
+- **Bring your own endpoint:** repeat `--backend URL` for any OpenAI-compatible server.
+- **Mobile-first UI:** safe-area support, streaming Markdown, model switching, and a Stop button.
+- **Ephemeral by design:** the gateway stores no chat history; in-memory sessions disappear when it restarts.
+- **Zero runtime baggage:** no Docker, Node.js, Python, database, or account system.
+
+## Supported backends
+
+| Backend | Auto-detected endpoint | Status |
+| --- | --- | --- |
+| [Ollama](https://ollama.com/) | `http://127.0.0.1:11434/v1` | Automatic |
+| [LM Studio](https://lmstudio.ai/) | `http://127.0.0.1:1234/v1` | Automatic |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) | `http://127.0.0.1:8080/v1` | Automatic |
+| OMLX | `http://127.0.0.1:8000/v1` | Automatic on macOS |
+| Any OpenAI-compatible API | `scanchat --backend http://host:port/v1` | Manual |
+
+A compatible backend only needs `GET /models` and streaming `POST /chat/completions` endpoints.
 
 ## How it works
 
-```text
-Phone browser
-      | HTTP + SSE over the LAN
-      v
-scanchat gateway (:8442)
-      +-- OpenAI-compatible API --> loopback backends
+```mermaid
+flowchart LR
+    P["Phone browser<br/>No app required"] <-->|"HTTP + SSE<br/>local Wi-Fi"| G["scanchat<br/>gateway"]
+    G -->|"loopback<br/>OpenAI API"| O[Ollama]
+    G -->|"loopback<br/>OpenAI API"| L[LM Studio]
+    G -->|"loopback<br/>OpenAI API"| C[llama.cpp / OMLX]
+    G -.->|"explicit --backend"| X[Custom endpoint]
 ```
 
-At startup, scanchat probes the standard local endpoints for Ollama, LM Studio, and llama.cpp. On macOS it also probes OMLX. Models are presented under namespaced IDs, and chat responses stream unchanged from the selected backend to the phone. Use `--backend http://127.0.0.1:8000/v1` to add another compatible endpoint.
+The QR URL keeps its pairing code in the fragment, so the code never appears in HTTP access logs. The web client exchanges it once for an opaque session cookie, then talks only to scanchat. The gateway resolves the selected model to its backend and forwards the chat stream.
 
-## Security
+## Security without hand-waving
 
-- Pairing codes are generated with `crypto/rand`, expire after 10 minutes by default, and rotate immediately after successful use.
-- The QR carries the code in the URL fragment, keeping it out of HTTP request logs; successful pairing creates a random 32-byte `HttpOnly`, `SameSite=Lax` session cookie.
-- Failed pairing is limited per IP: five failures in one minute trigger a five-minute lockout.
-- Auto-discovered upstreams use loopback addresses. Explicit `--backend` URLs are trusted operator input and may point elsewhere.
-- Chat, model, and session API routes require authentication; POST requests reject foreign origins, and all responses include restrictive browser security headers.
-- Sessions live only in memory and are all revoked when scanchat restarts. Per-device revocation is planned.
+scanchat is designed for a **trusted home or office LAN**, not the public internet.
 
-scanchat serves plain HTTP because phones need to reach it directly over the LAN. That means traffic and session cookies are not encrypted in transit. Its v1 threat model is a trusted home or office Wi-Fi network: do not expose the port to the public internet, add router port forwarding, or use it on an untrusted network. A future tunnel adapter will provide authenticated TLS for remote access.
+- Pairing codes use `crypto/rand`, expire after 10 minutes by default, and rotate immediately after successful use.
+- Sessions use random 32-byte tokens in `HttpOnly`, `SameSite=Lax` cookies.
+- Five failed pairing attempts from one IP in one minute trigger a five-minute lockout.
+- Every chat, model, and session route requires authentication.
+- Foreign-origin POST requests are rejected, and restrictive browser security headers are enabled.
+- Auto-discovered model servers are always loopback addresses. Non-loopback `--backend` values are explicit operator choices and produce a warning.
 
-## Comparison
+**Important:** v1 serves plain HTTP on your LAN. Traffic is not encrypted in transit. Do not port-forward scanchat or use it on an untrusted network. TLS-backed Tailscale and Cloudflare tunnel adapters are planned for v1.1.
 
-These projects solve related problems with different scopes; choose the one that matches your setup.
+For implementation details, see [`internal/pair`](internal/pair) and [`internal/server`](internal/server).
+
+## CLI
+
+```text
+scanchat [options]
+
+  --port 8442             LAN port to listen on
+  --backend URL           extra OpenAI-compatible base URL; repeatable
+  --no-qr                 print the address and code without a QR
+  --code-ttl 10m          pairing-code lifetime
+  --version               print the version and exit
+```
+
+Examples:
+
+```sh
+# Use a custom vLLM, LocalAI, or other compatible server
+scanchat --backend http://127.0.0.1:8000/v1
+
+# Run on a different port with a shorter pairing window
+scanchat --port 9000 --code-ttl 2m
+```
+
+## Compared with alternatives
+
+These are all good projects with different goals:
 
 | | scanchat | Open WebUI | LM Link | Native mobile apps |
 | --- | --- | --- | --- | --- |
-| Install effort | One static binary | Deploy a web application or container | Included with LM Studio | Install on each phone |
-| Works with any backend | OpenAI-compatible APIs | Broad backend support | LM Studio | Varies by app |
-| No account required | Yes | Local user setup by default | Yes | Varies by app |
-| Phone setup | Scan one QR; use browser | Open URL and sign in | Scan from LM Studio | Install and configure app |
+| Best for | Instant, ephemeral LAN access | Full multi-user web platform | LM Studio remote access | Deep mobile integration |
+| Computer setup | One binary | Deploy an application/container | Included with LM Studio | Varies |
+| Phone setup | Scan QR; use browser | Open URL and sign in | Scan from LM Studio | Install and configure |
+| Backend scope | Any OpenAI-compatible API | Broad integrations | LM Studio | Varies |
+| Server-side chat history | None | Yes | Product-dependent | App-dependent |
 
-Open WebUI is the stronger fit for a full multi-user interface and persistent history. LM Link is the shortest path for an LM Studio-only workflow. Native apps can offer deeper mobile integration. scanchat focuses on a small, ephemeral bridge from local OpenAI-compatible servers to any phone browser.
+Choose Open WebUI when you want accounts, persistence, and a larger platform. Choose LM Link when your workflow is entirely inside LM Studio. Choose a native app when OS-level integration matters most. Choose scanchat when you want the shortest path from a running local model to any phone browser.
+
+## FAQ
+
+<details>
+<summary><strong>Does scanchat send prompts to the cloud?</strong></summary>
+
+No. scanchat itself has no cloud service or telemetry. By default it only connects to model servers on your computer's loopback interface. If you configure a remote `--backend`, that endpoint's own privacy policy applies.
+
+</details>
+
+<details>
+<summary><strong>Does it work on iPhone and Android?</strong></summary>
+
+Yes. It uses standard browser APIs and requires no native app. Where the browser permits, the page can also be added to the home screen.
+
+</details>
+
+<details>
+<summary><strong>Can several local backends run at once?</strong></summary>
+
+Yes. scanchat groups models by backend and namespaces their IDs so models with the same upstream name remain unambiguous.
+
+</details>
+
+<details>
+<summary><strong>Where is chat history stored?</strong></summary>
+
+The gateway does not persist chat history. The current conversation lives only in the open browser page and disappears when that page is refreshed or closed. Your model backend may have its own logging behavior.
+
+</details>
+
+<details>
+<summary><strong>Can I use it away from home?</strong></summary>
+
+Not safely in v1. Do not expose the HTTP port directly to the internet. Authenticated TLS tunnel support is on the roadmap.
+
+</details>
 
 ## Roadmap
 
-- v1.1 adapters for Tailscale Serve and Cloudflare Quick Tunnels.
-- Device management UI with individual session revocation.
-- Sidecar and library modes for embedding the gateway in other tools.
+- [ ] Tailscale Serve and Cloudflare Quick Tunnel adapters.
+- [ ] Device management with individual session revocation.
+- [ ] Sidecar and Go library modes for embedding scanchat elsewhere.
+- [ ] Optional vision/image passthrough.
+
+Have a use case that should shape the roadmap? [Open an issue](https://github.com/shao-hua-li/scanchat/issues).
+
+## Contributing
+
+Small, focused contributions are welcome. The project intentionally keeps the Go server dependency-light and the web client compact.
+
+```sh
+make test
+make web
+```
+
+For bug reports, include your OS, backend, model server version, browser, and the terminal output with secrets removed.
+
+## Help more people find scanchat
+
+If scanchat removes one annoying step from your local-LLM setup, consider [starring the repository](https://github.com/shao-hua-li/scanchat). It helps other local-AI builders discover the project.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © 2026 Shao-Hua Li
