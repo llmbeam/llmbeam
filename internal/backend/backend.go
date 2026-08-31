@@ -21,6 +21,10 @@ const (
 type Backend struct {
 	ID      string
 	BaseURL string
+
+	mu           sync.RWMutex
+	apiKey       string
+	apiKeyLoader credentialLoader
 }
 
 // ModelInfo is the gateway-facing identity of an upstream model.
@@ -32,21 +36,27 @@ type ModelInfo struct {
 
 // Models fetches GET <base>/models and returns the advertised model IDs.
 func (b *Backend) Models(timeout time.Duration) ([]string, error) {
-	request, err := http.NewRequest(http.MethodGet, b.BaseURL+"/models", nil)
-	if err != nil {
-		return nil, fmt.Errorf("build %s models request: %w", b.ID, err)
-	}
-	request.Header.Set("Accept", "application/json")
-
 	client := &http.Client{
 		Timeout: timeout,
 		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("query %s models: %w", b.ID, err)
+	var response *http.Response
+	for attempt := 0; attempt < 2; attempt++ {
+		request, err := http.NewRequest(http.MethodGet, b.BaseURL+"/models", nil)
+		if err != nil {
+			return nil, fmt.Errorf("build %s models request: %w", b.ID, err)
+		}
+		request.Header.Set("Accept", "application/json")
+		b.ApplyAuth(request)
+		response, err = client.Do(request)
+		if err != nil {
+			return nil, fmt.Errorf("query %s models: %w", b.ID, err)
+		}
+		if !b.retryAuthAfterUnauthorized(response) {
+			break
+		}
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {

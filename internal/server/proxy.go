@@ -55,24 +55,35 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	upstreamRequest, err := http.NewRequestWithContext(
-		r.Context(),
-		http.MethodPost,
-		selected.BaseURL+"/chat/completions",
-		bytes.NewReader(body),
-	)
-	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "internal")
-		return
+	request := func() (*http.Response, error) {
+		upstreamRequest, err := http.NewRequestWithContext(
+			r.Context(),
+			http.MethodPost,
+			selected.BaseURL+"/chat/completions",
+			bytes.NewReader(body),
+		)
+		if err != nil {
+			return nil, err
+		}
+		upstreamRequest.Header.Set("Content-Type", "application/json")
+		upstreamRequest.Header.Set("Accept", "text/event-stream")
+		upstreamRequest.Header.Set("Accept-Encoding", "identity")
+		selected.ApplyAuth(upstreamRequest)
+		return s.upstream.Do(upstreamRequest)
 	}
-	upstreamRequest.Header.Set("Content-Type", "application/json")
-	upstreamRequest.Header.Set("Accept", "text/event-stream")
-	upstreamRequest.Header.Set("Accept-Encoding", "identity")
 
-	response, err := s.upstream.Do(upstreamRequest)
+	response, err := request()
 	if err != nil {
 		jsonError(w, http.StatusBadGateway, "backend_unreachable")
 		return
+	}
+	if response.StatusCode == http.StatusUnauthorized && selected.RefreshAuth() {
+		_ = response.Body.Close()
+		response, err = request()
+		if err != nil {
+			jsonError(w, http.StatusBadGateway, "backend_unreachable")
+			return
+		}
 	}
 	defer response.Body.Close()
 

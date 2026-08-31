@@ -107,10 +107,12 @@ Other useful details:
 | [Ollama](https://ollama.com/) | `http://127.0.0.1:11434/v1` | Automatic |
 | [LM Studio](https://lmstudio.ai/) | `http://127.0.0.1:1234/v1` | Automatic |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | `http://127.0.0.1:8080/v1` | Automatic |
-| OMLX | `http://127.0.0.1:8000/v1` | Automatic on macOS |
+| OMLX | `http://127.0.0.1:8000/v1` | Automatic on macOS (including API key) |
 | Any OpenAI-compatible API | `scanchat --backend http://host:port/v1` | Manual |
 
 A compatible backend only needs `GET /models` and streaming `POST /chat/completions` endpoints.
+
+When OMLX API-key authentication is enabled, scanchat automatically reads the key from OMLX's normal local configuration (`SCANCHAT_OMLX_API_KEY`, `OMLX_API_KEY`, or `~/.omlx/settings.json`) and keeps it on the computer. You do not need to paste a key into your phone or disable OMLX authentication.
 
 ## How it works
 
