@@ -239,4 +239,4 @@ If scanchat removes one annoying step from your local-LLM setup, consider [starr
 
 ## License
 
-[MIT](LICENSE) © 2026 Shao-Hua Li
+[MIT](LICENSE) © 2026 Shaohua Li
