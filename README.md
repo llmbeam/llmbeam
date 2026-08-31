@@ -1,5 +1,7 @@
 <h1 align="center">scanchat</h1>
 
+<p align="center"><a href="README.zh-CN.md">简体中文</a> · <strong>English</strong></p>
+
 <p align="center"><strong>One binary. Any local LLM. Scan and chat.</strong></p>
 
 <p align="center">
