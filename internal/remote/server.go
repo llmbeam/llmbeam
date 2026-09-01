@@ -32,7 +32,14 @@ func Start(handler http.Handler) (*Server, error) {
 }
 
 func (server *Server) Token() string {
-	return string(server.tailcat.ConnBlob())
+	blob := server.tailcat.ConnBlob()
+	info, err := tailcat.ParseConnBlob(blob)
+	if err != nil || len(info.Region) != 1 {
+		return string(blob)
+	}
+	info.RegionID = info.Region[0].RegionID
+	info.Region = nil
+	return string(info.ConnBlob())
 }
 
 func (server *Server) Close() error {

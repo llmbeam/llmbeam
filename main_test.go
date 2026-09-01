@@ -127,7 +127,7 @@ func TestChooseQRLayoutAdaptsToTerminalSize(t *testing.T) {
 
 	_, standardHeight := standard.dimensions(code.Size)
 	tooShort := chooseQRLayout(payload, 100, standardHeight+pairingOutputRows-2)
-	if tooShort.show {
-		t.Fatalf("short terminal layout = %+v", tooShort)
+	if !tooShort.show || tooShort.quietZone != 1 {
+		t.Fatalf("short terminal layout = %+v, want scrollable QR", tooShort)
 	}
 }
