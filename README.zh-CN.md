@@ -105,12 +105,25 @@ scanchat
 | [Ollama](https://ollama.com/) | `http://127.0.0.1:11434/v1` | 自动 |
 | [LM Studio](https://lmstudio.ai/) | `http://127.0.0.1:1234/v1` | 自动 |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | `http://127.0.0.1:8080/v1` | 自动 |
-| OMLX | `http://127.0.0.1:8000/v1` | macOS 自动接入，包含 API key |
+| OMLX | `http://127.0.0.1:8000/v1` | macOS 自动接入 |
 | 任意 OpenAI 兼容服务 | `scanchat --backend http://host:port/v1` | 手动添加 |
 
 兼容后端只需实现 `GET /models` 和支持流式响应的 `POST /chat/completions`。
 
-如果 OMLX 开启了 API key 认证，scanchat 会自动从 OMLX 的本地配置中读取凭据，优先级为 `SCANCHAT_OMLX_API_KEY`、`OMLX_API_KEY`、`~/.omlx/settings.json`。密钥只在电脑本地使用，不会传给手机；用户不需要复制密钥，也不需要关闭 OMLX 认证。
+### 需要 API key 的后端
+
+API key 始终留在电脑上，scanchat 会为模型发现和聊天请求统一添加 Bearer 凭据。启动 scanchat 前，设置对应的环境变量即可：
+
+| 后端 | scanchat 环境变量 | 原生配置回退 |
+| --- | --- | --- |
+| Ollama 或带认证的 Ollama 代理 | `SCANCHAT_OLLAMA_API_KEY` | — |
+| LM Studio | `SCANCHAT_LM_STUDIO_API_KEY` | — |
+| llama.cpp | `SCANCHAT_LLAMA_CPP_API_KEY` | `LLAMA_ARG_API_KEY` |
+| OMLX | `SCANCHAT_OMLX_API_KEY` | `OMLX_API_KEY`，然后读取 OMLX `settings.json` |
+| 第一个 `--backend` | `SCANCHAT_CUSTOM_1_API_KEY` | — |
+| 第二个 `--backend` | `SCANCHAT_CUSTOM_2_API_KEY` | — |
+
+vLLM、LocalAI 和其他需要认证的 OpenAI 兼容服务都使用相同的 `SCANCHAT_CUSTOM_N_API_KEY` 规则，其中 `N` 与 `--backend` 参数的顺序一致。scanchat 不会把这些密钥发送给手机，也不会把它们写入日志或错误响应。
 
 ## 工作原理
 
@@ -135,7 +148,7 @@ scanchat 面向的是**可信的家庭或办公室局域网**，不是公网。
 - 聊天、模型列表和会话接口全部要求认证。
 - 来自其他 Origin 的 POST 请求会被拒绝，并启用了严格的浏览器安全响应头。
 - 自动发现的模型服务始终使用回环地址；非回环的 `--backend` 必须由用户显式指定，并会显示警告。
-- OMLX API key 只保存在 scanchat 进程内存中，不写入日志，也不会发送给手机。
+- 所有后端 API key 都只保存在 scanchat 网关进程中，不写入日志，也不会发送给手机。
 
 **请注意：** v1 在局域网中使用明文 HTTP，传输内容没有加密。不要进行公网端口转发，也不要在不可信网络中使用。基于 TLS 的 Tailscale Serve 和 Cloudflare Tunnel 适配计划在 v1.1 中提供。
 

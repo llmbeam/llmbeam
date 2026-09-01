@@ -109,12 +109,25 @@ Other useful details:
 | [Ollama](https://ollama.com/) | `http://127.0.0.1:11434/v1` | Automatic |
 | [LM Studio](https://lmstudio.ai/) | `http://127.0.0.1:1234/v1` | Automatic |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | `http://127.0.0.1:8080/v1` | Automatic |
-| OMLX | `http://127.0.0.1:8000/v1` | Automatic on macOS (including API key) |
+| OMLX | `http://127.0.0.1:8000/v1` | Automatic on macOS |
 | Any OpenAI-compatible API | `scanchat --backend http://host:port/v1` | Manual |
 
 A compatible backend only needs `GET /models` and streaming `POST /chat/completions` endpoints.
 
-When OMLX API-key authentication is enabled, scanchat automatically reads the key from OMLX's normal local configuration (`SCANCHAT_OMLX_API_KEY`, `OMLX_API_KEY`, or `~/.omlx/settings.json`) and keeps it on the computer. You do not need to paste a key into your phone or disable OMLX authentication.
+### Authenticated backends
+
+API keys stay on the computer and are attached to both model discovery and chat requests as Bearer credentials. Set the matching environment variable before starting scanchat:
+
+| Backend | scanchat variable | Native fallback |
+| --- | --- | --- |
+| Ollama or an authenticated Ollama proxy | `SCANCHAT_OLLAMA_API_KEY` | — |
+| LM Studio | `SCANCHAT_LM_STUDIO_API_KEY` | — |
+| llama.cpp | `SCANCHAT_LLAMA_CPP_API_KEY` | `LLAMA_ARG_API_KEY` |
+| OMLX | `SCANCHAT_OMLX_API_KEY` | `OMLX_API_KEY`, then OMLX `settings.json` |
+| First `--backend` | `SCANCHAT_CUSTOM_1_API_KEY` | — |
+| Second `--backend` | `SCANCHAT_CUSTOM_2_API_KEY` | — |
+
+The same `SCANCHAT_CUSTOM_N_API_KEY` pattern works for vLLM, LocalAI, or any other authenticated OpenAI-compatible server, where `N` follows the order of `--backend` flags. scanchat never sends these keys to the phone or includes them in logs and error responses.
 
 ## How it works
 
@@ -139,6 +152,7 @@ scanchat is designed for a **trusted home or office LAN**, not the public intern
 - Every chat, model, and session route requires authentication.
 - Foreign-origin POST requests are rejected, and restrictive browser security headers are enabled.
 - Auto-discovered model servers are always loopback addresses. Non-loopback `--backend` values are explicit operator choices and produce a warning.
+- Backend API keys remain in the gateway process and are never exposed to paired browsers.
 
 **Important:** v1 serves plain HTTP on your LAN. Traffic is not encrypted in transit. Do not port-forward scanchat or use it on an untrusted network. TLS-backed Tailscale and Cloudflare tunnel adapters are planned for v1.1.
 
