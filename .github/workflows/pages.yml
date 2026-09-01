@@ -7,6 +7,12 @@ on:
     paths:
       - ".github/workflows/pages.yml"
       - "remote-web/**"
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "web/public/**"
+      - "web/src/**"
+      - "web/tsconfig*.json"
+      - "web/vite.remote.config.ts"
 
 permissions:
   contents: read
@@ -37,18 +43,32 @@ jobs:
 
       - name: Build Tailcat WASM
         working-directory: tailcat
-        run: go run ./cmd/tailcat-webdist -o ../pages
+        run: go run ./cmd/tailcat-webdist -o ../tailcat-pages
 
-      - name: Keep GitHub Pages assets
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build LLMBeam Connect page
+        working-directory: web
+        run: npm run build:remote
+
+      - name: Add Tailcat runtime
         run: |
-          rm pages/main.wasm
-          rm pages/main.wasm.zst
+          cp tailcat-pages/main.wasm.gz dist/remote-web/main.wasm.gz
+          cp tailcat-pages/wasm_exec.js dist/remote-web/wasm_exec.js
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: pages
+          path: dist/remote-web
 
   deploy:
     environment:

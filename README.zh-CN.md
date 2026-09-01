@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://go.dev/"><img alt="Go 1.22+" src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
+  <a href="https://go.dev/"><img alt="Go 1.27+" src="https://img.shields.io/badge/Go-1.27%2B-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-7c3aed?style=flat-square"></a>
   <a href="https://github.com/shao-hua-li/llmbeam/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/shao-hua-li/llmbeam?style=social"></a>
 </p>
@@ -46,13 +46,13 @@ $ llmbeam
 
 ### 1. 安装
 
-从 [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest) 下载适用于 macOS、Linux 或 Windows 的预编译版本，或者使用 Go 1.22+ 安装：
+从 [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest) 下载适用于 macOS、Linux 或 Windows 的预编译版本，或者使用 Go 1.27+ 安装：
 
 ```sh
 go install github.com/shao-hua-li/llmbeam@latest
 ```
 
-也可以从源码构建。源码构建需要 Go 1.22+ 和 Node.js 22；运行预编译版本不需要它们。
+也可以从源码构建。源码构建需要 Go 1.27+ 和 Node.js 22；运行预编译版本不需要它们。
 
 ```sh
 git clone https://github.com/shao-hua-li/llmbeam.git
@@ -77,6 +77,16 @@ llmbeam
 ```
 
 让手机和电脑连接同一个 Wi-Fi，然后用 iPhone 或 Android 手机扫描终端里的二维码。浏览器会自动完成配对，列出已发现的模型，并实时流式显示回答。
+
+### 从任意网络使用（实验性）
+
+```sh
+llmbeam --remote
+```
+
+现在可以在任意网络扫码。GitHub Pages 上的公共连接页会加载聊天界面和 Tailcat WebAssembly，再通过 Tailscale DERP 中继与当前 LLMBeam 进程建立端到端加密的 TCP 连接。不需要端口转发、账号、域名或自行部署服务器。
+
+远程模式仍处于实验阶段。拿到当前远程 URL 和配对码的人在其过期前都可以尝试连接，请勿分享二维码或 URL。Tailcat 地址是临时的，LLMBeam 退出后立即失效；Tailcat 目前也不保证 API 与线路协议的稳定性。
 
 ## 为什么是 LLMBeam？
 
@@ -150,7 +160,7 @@ LLMBeam 面向的是**可信的家庭或办公室局域网**，不是公网。
 - 自动发现的模型服务始终使用回环地址；非回环的 `--backend` 必须由用户显式指定，并会显示警告。
 - 所有后端 API key 都只保存在 LLMBeam 网关进程中，不写入日志，也不会发送给手机。
 
-**请注意：** v1 在局域网中使用明文 HTTP，传输内容没有加密。不要进行公网端口转发，也不要在不可信网络中使用。基于 TLS 的 Tailscale Serve 和 Cloudflare Tunnel 适配计划在 v1.1 中提供。
+**请注意：** 本地模式在局域网中使用明文 HTTP，传输内容没有加密，请勿把 HTTP 端口直接转发到公网，也不要在不可信网络中使用。实验性的 `--remote` 模式使用 Tailcat 加密传输与 Tailscale DERP 中继。
 
 实现细节可以查看 [`internal/pair`](internal/pair) 和 [`internal/server`](internal/server)。
 
@@ -223,12 +233,13 @@ llmbeam --port 9000 --code-ttl 2m
 <details>
 <summary><strong>可以在外网使用吗？</strong></summary>
 
-v1 不建议这样做。请勿直接把 HTTP 端口暴露到公网。带认证和 TLS 的隧道支持已经列入路线图。
+可以使用实验性的 `llmbeam --remote` 模式。请勿直接把本地 HTTP 端口暴露到公网，而应使用命令生成的远程 URL。
 
 </details>
 
 ## 路线图
 
+- [x] 基于 Tailcat 与 DERP 的实验性加密远程访问。
 - [ ] Tailscale Serve 和 Cloudflare Quick Tunnel 适配。
 - [ ] 设备管理与单独撤销会话。
 - [ ] Sidecar 模式和可嵌入的 Go 库。

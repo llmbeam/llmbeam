@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://go.dev/"><img alt="Go 1.22+" src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
+  <a href="https://go.dev/"><img alt="Go 1.27+" src="https://img.shields.io/badge/Go-1.27%2B-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-7c3aed?style=flat-square"></a>
   <a href="https://github.com/shao-hua-li/llmbeam/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/shao-hua-li/llmbeam?style=social"></a>
 </p>
@@ -48,7 +48,7 @@ $ llmbeam
 
 ### 1. Install
 
-Download a prebuilt binary for macOS, Linux, or Windows from [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest), or install with Go 1.22+:
+Download a prebuilt binary for macOS, Linux, or Windows from [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest), or install with Go 1.27+:
 
 ```sh
 go install github.com/shao-hua-li/llmbeam@latest
@@ -56,7 +56,7 @@ go install github.com/shao-hua-li/llmbeam@latest
 
 To build from source:
 
-Source builds require Go 1.22+ and Node.js 22; neither is needed to run a prebuilt binary.
+Source builds require Go 1.27+ and Node.js 22; neither is needed to run a prebuilt binary.
 
 ```sh
 git clone https://github.com/shao-hua-li/llmbeam.git
@@ -81,6 +81,16 @@ llmbeam
 ```
 
 Scan the QR code with an iPhone or Android phone on the same Wi-Fi. The browser pairs automatically, shows every discovered model, and streams replies token by token.
+
+### Use it from anywhere (experimental)
+
+```sh
+llmbeam --remote
+```
+
+Scan the new QR code from any network. The public GitHub Pages app loads the chat UI and Tailcat WebAssembly, then opens an end-to-end encrypted TCP connection back to this LLMBeam process through Tailscale DERP relays. No port forwarding, account, domain, or server deployment is required.
+
+Remote access is experimental. Anyone holding the current remote URL and pairing code can attempt to connect until they expire, so do not share the QR or URL. The Tailcat address is ephemeral and stops working when LLMBeam exits. Tailcat currently offers no API or wire-format stability guarantee.
 
 ## Why LLMBeam?
 
@@ -154,7 +164,7 @@ LLMBeam is designed for a **trusted home or office LAN**, not the public interne
 - Auto-discovered model servers are always loopback addresses. Non-loopback `--backend` values are explicit operator choices and produce a warning.
 - Backend API keys remain in the gateway process and are never exposed to paired browsers.
 
-**Important:** v1 serves plain HTTP on your LAN. Traffic is not encrypted in transit. Do not port-forward LLMBeam or use it on an untrusted network. TLS-backed Tailscale and Cloudflare tunnel adapters are planned for v1.1.
+**Important:** local mode serves plain HTTP on your LAN. Traffic is not encrypted in transit, so do not port-forward its HTTP port or use it on an untrusted network. Experimental `--remote` traffic uses Tailcat's encrypted transport and Tailscale DERP relays.
 
 For implementation details, see [`internal/pair`](internal/pair) and [`internal/server`](internal/server).
 
@@ -227,12 +237,13 @@ The gateway does not persist chat history. The current conversation lives only i
 <details>
 <summary><strong>Can I use it away from home?</strong></summary>
 
-Not safely in v1. Do not expose the HTTP port directly to the internet. Authenticated TLS tunnel support is on the roadmap.
+Yes, with the experimental `llmbeam --remote` mode. Do not expose the local HTTP port directly to the internet; use the generated remote URL instead.
 
 </details>
 
 ## Roadmap
 
+- [x] Experimental encrypted remote access through Tailcat and DERP.
 - [ ] Tailscale Serve and Cloudflare Quick Tunnel adapters.
 - [ ] Device management with individual session revocation.
 - [ ] Sidecar and Go library modes for embedding LLMBeam elsewhere.
