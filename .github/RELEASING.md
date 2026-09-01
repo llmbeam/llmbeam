@@ -32,4 +32,6 @@ The release workflow publishes:
 - release notes generated from commits;
 - an updated Homebrew cask.
 
+The Linux installer at `install.sh` reads the latest GitHub Release and verifies its archive with `checksums.txt`. Keep the archive naming and checksum output stable when changing the GoReleaser configuration.
+
 Use a new version tag to retry a failed release after fixing its cause. Do not move a tag that users may already have fetched.

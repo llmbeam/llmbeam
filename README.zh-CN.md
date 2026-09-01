@@ -46,7 +46,7 @@ $ llmbeam
 
 ### 1. 安装
 
-macOS 或 Linux 用户可以通过 Homebrew 安装：
+macOS 用户可以通过 Homebrew 安装：
 
 ```sh
 brew install shao-hua-li/tap/llmbeam
@@ -61,6 +61,14 @@ xattr -d com.apple.quarantine "$(which llmbeam)"
 ```
 
 这是 macOS 二进制尚未经过 Apple 公证期间的临时解决方案。请勿对来源不可信的二进制文件执行此命令。
+
+Linux 用户可以使用一条命令安装经过校验的最新版本：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/shao-hua-li/llmbeam/main/install.sh | sh
+```
+
+脚本会自动识别 amd64 或 arm64，使用 `checksums.txt` 校验下载的压缩包，并默认安装到 `~/.local/bin`，不需要 `sudo`。设置 `LLMBEAM_INSTALL_DIR` 可以指定其他安装目录。
 
 也可以从 [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest) 下载 macOS、Linux 或 Windows 的预编译压缩包。每个版本都会提供 amd64、arm64 构建以及 `checksums.txt` 校验文件。
 

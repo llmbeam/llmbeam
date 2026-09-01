@@ -48,7 +48,7 @@ $ llmbeam
 
 ### 1. Install
 
-On macOS or Linux, install with Homebrew:
+On macOS, install with Homebrew:
 
 ```sh
 brew install shao-hua-li/tap/llmbeam
@@ -63,6 +63,14 @@ xattr -d com.apple.quarantine "$(which llmbeam)"
 ```
 
 This is a temporary workaround while the macOS binary is not yet Apple-notarized. Do not run it on binaries downloaded from untrusted sources.
+
+On Linux, install the latest verified binary with one command:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/shao-hua-li/llmbeam/main/install.sh | sh
+```
+
+The installer detects amd64 or arm64, verifies the downloaded archive against `checksums.txt`, and installs to `~/.local/bin` without requiring `sudo`. Set `LLMBEAM_INSTALL_DIR` to choose another location.
 
 Prebuilt archives for macOS, Linux, and Windows are also available from [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest). Each release includes amd64 and arm64 builds plus a `checksums.txt` file.
 
