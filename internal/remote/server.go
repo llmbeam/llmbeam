@@ -1,8 +1,10 @@
 package remote
 
 import (
+	"log"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/tailscale/tailcat"
 	_ "tailscale.com/feature/condregister/useproxy"
@@ -15,8 +17,13 @@ type Server struct {
 }
 
 func Start(handler http.Handler) (*Server, error) {
+	verbose := os.Getenv("LLMBEAM_TAILCAT_VERBOSE") != ""
 	tailcatServer := &tailcat.Server{
-		Logf: func(string, ...any) {},
+		Logf: func(format string, args ...any) {
+			if verbose {
+				log.Printf("tailcat: "+format, args...)
+			}
+		},
 		OnTCP: func(port uint16) func(net.Conn) {
 			if port != tunnelPort {
 				return nil
