@@ -48,7 +48,17 @@ $ llmbeam
 
 ### 1. Install
 
-Download a prebuilt binary for macOS, Linux, or Windows from [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest), or install with Go 1.27+:
+On macOS or Linux, install with Homebrew:
+
+```sh
+brew install shao-hua-li/tap/llmbeam
+```
+
+Upgrade later with `brew upgrade llmbeam`.
+
+Prebuilt archives for macOS, Linux, and Windows are also available from [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest). Each release includes amd64 and arm64 builds plus a `checksums.txt` file.
+
+Alternatively, install with Go 1.27+:
 
 ```sh
 go install github.com/shao-hua-li/llmbeam@latest

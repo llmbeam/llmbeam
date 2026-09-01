@@ -46,7 +46,17 @@ $ llmbeam
 
 ### 1. 安装
 
-从 [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest) 下载适用于 macOS、Linux 或 Windows 的预编译版本，或者使用 Go 1.27+ 安装：
+macOS 或 Linux 用户可以通过 Homebrew 安装：
+
+```sh
+brew install shao-hua-li/tap/llmbeam
+```
+
+后续使用 `brew upgrade llmbeam` 即可升级。
+
+也可以从 [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest) 下载 macOS、Linux 或 Windows 的预编译压缩包。每个版本都会提供 amd64、arm64 构建以及 `checksums.txt` 校验文件。
+
+或者使用 Go 1.27+ 安装：
 
 ```sh
 go install github.com/shao-hua-li/llmbeam@latest
