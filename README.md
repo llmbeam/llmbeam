@@ -1,23 +1,23 @@
-<h1 align="center">scanchat</h1>
+<h1 align="center">LLMBeam</h1>
 
 <p align="center"><a href="README.zh-CN.md">简体中文</a> · <strong>English</strong></p>
 
-<p align="center"><strong>One binary. Any local LLM. Scan and chat.</strong></p>
+<p align="center"><strong>Beam any local LLM to your phone. One command. One scan. Zero cloud.</strong></p>
 
 <p align="center">
-  Turn Ollama, LM Studio, llama.cpp, or any OpenAI-compatible server into a private mobile chat UI in seconds.
+  Access Ollama, LM Studio, llama.cpp, OMLX, or any OpenAI-compatible server from the browser already on your phone.
 </p>
 
 <p align="center">
-  <a href="https://github.com/shao-hua-li/scanchat/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/shao-hua-li/scanchat/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://go.dev/"><img alt="Go 1.22+" src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-7c3aed?style=flat-square"></a>
-  <a href="https://github.com/shao-hua-li/scanchat/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/shao-hua-li/scanchat?style=social"></a>
+  <a href="https://github.com/shao-hua-li/llmbeam/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/shao-hua-li/llmbeam?style=social"></a>
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
-  <a href="#why-scanchat">Why scanchat?</a> ·
+  <a href="#why-llmbeam">Why LLMBeam?</a> ·
   <a href="#security-without-hand-waving">Security</a> ·
   <a href="#faq">FAQ</a>
 </p>
@@ -26,10 +26,10 @@
 
 Your local model is already running on the most powerful machine you own. Why install another app, create an account, or type IP addresses just to use it from the couch?
 
-**scanchat is the missing last meter.** Run one ~10 MB binary, scan the QR code, and start chatting from the browser already on your phone. No Docker. No cloud relay. No runtime dependencies.
+**LLMBeam is the shortest path from a local model to your phone.** Run one ~10 MB binary, scan the QR code, and start chatting from the browser already on your phone. No Docker. No cloud relay. No runtime dependencies.
 
 ```text
-$ scanchat
+$ llmbeam
 
   Discovered backends:
     ✓ ollama      http://127.0.0.1:11434/v1   (3 models)
@@ -48,10 +48,10 @@ $ scanchat
 
 ### 1. Install
 
-Download a prebuilt binary for macOS, Linux, or Windows from [Releases](https://github.com/shao-hua-li/scanchat/releases/latest), or install with Go 1.22+:
+Download a prebuilt binary for macOS, Linux, or Windows from [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest), or install with Go 1.22+:
 
 ```sh
-go install github.com/shao-hua-li/scanchat@latest
+go install github.com/shao-hua-li/llmbeam@latest
 ```
 
 To build from source:
@@ -59,8 +59,8 @@ To build from source:
 Source builds require Go 1.22+ and Node.js 22; neither is needed to run a prebuilt binary.
 
 ```sh
-git clone https://github.com/shao-hua-li/scanchat.git
-cd scanchat
+git clone https://github.com/shao-hua-li/llmbeam.git
+cd llmbeam
 make build
 ```
 
@@ -72,19 +72,19 @@ For example, with Ollama:
 ollama serve
 ```
 
-LM Studio and llama.cpp users can start their normal local server instead. scanchat discovers them automatically.
+LM Studio, llama.cpp, and OMLX users can start their normal local server instead. LLMBeam discovers them automatically.
 
 ### 3. Scan and chat
 
 ```sh
-scanchat
+llmbeam
 ```
 
 Scan the QR code with an iPhone or Android phone on the same Wi-Fi. The browser pairs automatically, shows every discovered model, and streams replies token by token.
 
-## Why scanchat?
+## Why LLMBeam?
 
-| What you want | What scanchat does |
+| What you want | What LLMBeam does |
 | --- | --- |
 | Use your local LLM from the sofa | Opens a touch-friendly web UI on any phone |
 | Start now, not after a deployment | Ships the Go server and Preact UI in one static binary |
@@ -110,41 +110,41 @@ Other useful details:
 | [LM Studio](https://lmstudio.ai/) | `http://127.0.0.1:1234/v1` | Automatic |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | `http://127.0.0.1:8080/v1` | Automatic |
 | OMLX | `http://127.0.0.1:8000/v1` | Automatic on macOS |
-| Any OpenAI-compatible API | `scanchat --backend http://host:port/v1` | Manual |
+| Any OpenAI-compatible API | `llmbeam --backend http://host:port/v1` | Manual |
 
 A compatible backend only needs `GET /models` and streaming `POST /chat/completions` endpoints.
 
 ### Authenticated backends
 
-API keys stay on the computer and are attached to both model discovery and chat requests as Bearer credentials. Set the matching environment variable before starting scanchat:
+API keys stay on the computer and are attached to both model discovery and chat requests as Bearer credentials. Set the matching environment variable before starting LLMBeam:
 
-| Backend | scanchat variable | Native fallback |
+| Backend | LLMBeam variable | Native fallback |
 | --- | --- | --- |
-| Ollama or an authenticated Ollama proxy | `SCANCHAT_OLLAMA_API_KEY` | — |
-| LM Studio | `SCANCHAT_LM_STUDIO_API_KEY` | — |
-| llama.cpp | `SCANCHAT_LLAMA_CPP_API_KEY` | `LLAMA_ARG_API_KEY` |
-| OMLX | `SCANCHAT_OMLX_API_KEY` | `OMLX_API_KEY`, then OMLX `settings.json` |
-| First `--backend` | `SCANCHAT_CUSTOM_1_API_KEY` | — |
-| Second `--backend` | `SCANCHAT_CUSTOM_2_API_KEY` | — |
+| Ollama or an authenticated Ollama proxy | `LLMBEAM_OLLAMA_API_KEY` | — |
+| LM Studio | `LLMBEAM_LM_STUDIO_API_KEY` | — |
+| llama.cpp | `LLMBEAM_LLAMA_CPP_API_KEY` | `LLAMA_ARG_API_KEY` |
+| OMLX | `LLMBEAM_OMLX_API_KEY` | `OMLX_API_KEY`, then OMLX `settings.json` |
+| First `--backend` | `LLMBEAM_CUSTOM_1_API_KEY` | — |
+| Second `--backend` | `LLMBEAM_CUSTOM_2_API_KEY` | — |
 
-The same `SCANCHAT_CUSTOM_N_API_KEY` pattern works for vLLM, LocalAI, or any other authenticated OpenAI-compatible server, where `N` follows the order of `--backend` flags. scanchat never sends these keys to the phone or includes them in logs and error responses.
+The same `LLMBEAM_CUSTOM_N_API_KEY` pattern works for vLLM, LocalAI, or any other authenticated OpenAI-compatible server, where `N` follows the order of `--backend` flags. LLMBeam never sends these keys to the phone or includes them in logs and error responses.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    P["Phone browser<br/>No app required"] <-->|"HTTP + SSE<br/>local Wi-Fi"| G["scanchat<br/>gateway"]
+    P["Phone browser<br/>No app required"] <-->|"HTTP + SSE<br/>local Wi-Fi"| G["LLMBeam<br/>gateway"]
     G -->|"loopback<br/>OpenAI API"| O[Ollama]
     G -->|"loopback<br/>OpenAI API"| L[LM Studio]
     G -->|"loopback<br/>OpenAI API"| C[llama.cpp / OMLX]
     G -.->|"explicit --backend"| X[Custom endpoint]
 ```
 
-The QR URL keeps its pairing code in the fragment, so the code never appears in HTTP access logs. The web client exchanges it once for an opaque session cookie, then talks only to scanchat. The gateway resolves the selected model to its backend and forwards the chat stream.
+The QR URL keeps its pairing code in the fragment, so the code never appears in HTTP access logs. The web client exchanges it once for an opaque session cookie, then talks only to LLMBeam. The gateway resolves the selected model to its backend and forwards the chat stream.
 
 ## Security without hand-waving
 
-scanchat is designed for a **trusted home or office LAN**, not the public internet.
+LLMBeam is designed for a **trusted home or office LAN**, not the public internet.
 
 - Pairing codes use `crypto/rand`, expire after 10 minutes by default, and rotate immediately after successful use.
 - Sessions use random 32-byte tokens in `HttpOnly`, `SameSite=Lax` cookies.
@@ -154,14 +154,14 @@ scanchat is designed for a **trusted home or office LAN**, not the public intern
 - Auto-discovered model servers are always loopback addresses. Non-loopback `--backend` values are explicit operator choices and produce a warning.
 - Backend API keys remain in the gateway process and are never exposed to paired browsers.
 
-**Important:** v1 serves plain HTTP on your LAN. Traffic is not encrypted in transit. Do not port-forward scanchat or use it on an untrusted network. TLS-backed Tailscale and Cloudflare tunnel adapters are planned for v1.1.
+**Important:** v1 serves plain HTTP on your LAN. Traffic is not encrypted in transit. Do not port-forward LLMBeam or use it on an untrusted network. TLS-backed Tailscale and Cloudflare tunnel adapters are planned for v1.1.
 
 For implementation details, see [`internal/pair`](internal/pair) and [`internal/server`](internal/server).
 
 ## CLI
 
 ```text
-scanchat [options]
+llmbeam [options]
 
   --port 8442             LAN port to listen on
   --backend URL           extra OpenAI-compatible base URL; repeatable
@@ -174,17 +174,17 @@ Examples:
 
 ```sh
 # Use a custom vLLM, LocalAI, or other compatible server
-scanchat --backend http://127.0.0.1:8000/v1
+llmbeam --backend http://127.0.0.1:8000/v1
 
 # Run on a different port with a shorter pairing window
-scanchat --port 9000 --code-ttl 2m
+llmbeam --port 9000 --code-ttl 2m
 ```
 
 ## Compared with alternatives
 
 These are all good projects with different goals:
 
-| | scanchat | Open WebUI | LM Link | Native mobile apps |
+| | LLMBeam | Open WebUI | LM Link | Native mobile apps |
 | --- | --- | --- | --- | --- |
 | Best for | Instant, ephemeral LAN access | Full multi-user web platform | LM Studio remote access | Deep mobile integration |
 | Computer setup | One binary | Deploy an application/container | Included with LM Studio | Varies |
@@ -192,14 +192,14 @@ These are all good projects with different goals:
 | Backend scope | Any OpenAI-compatible API | Broad integrations | LM Studio | Varies |
 | Server-side chat history | None | Yes | Product-dependent | App-dependent |
 
-Choose Open WebUI when you want accounts, persistence, and a larger platform. Choose LM Link when your workflow is entirely inside LM Studio. Choose a native app when OS-level integration matters most. Choose scanchat when you want the shortest path from a running local model to any phone browser.
+Choose Open WebUI when you want accounts, persistence, and a larger platform. Choose LM Link when your workflow is entirely inside LM Studio. Choose a native app when OS-level integration matters most. Choose LLMBeam when you want the shortest path from a running local model to any phone browser.
 
 ## FAQ
 
 <details>
-<summary><strong>Does scanchat send prompts to the cloud?</strong></summary>
+<summary><strong>Does LLMBeam send prompts to the cloud?</strong></summary>
 
-No. scanchat itself has no cloud service or telemetry. By default it only connects to model servers on your computer's loopback interface. If you configure a remote `--backend`, that endpoint's own privacy policy applies.
+No. LLMBeam itself has no cloud service or telemetry. By default it only connects to model servers on your computer's loopback interface. If you configure a remote `--backend`, that endpoint's own privacy policy applies.
 
 </details>
 
@@ -213,7 +213,7 @@ Yes. It uses standard browser APIs and requires no native app. Where the browser
 <details>
 <summary><strong>Can several local backends run at once?</strong></summary>
 
-Yes. scanchat groups models by backend and namespaces their IDs so models with the same upstream name remain unambiguous.
+Yes. LLMBeam groups models by backend and namespaces their IDs so models with the same upstream name remain unambiguous.
 
 </details>
 
@@ -235,10 +235,10 @@ Not safely in v1. Do not expose the HTTP port directly to the internet. Authenti
 
 - [ ] Tailscale Serve and Cloudflare Quick Tunnel adapters.
 - [ ] Device management with individual session revocation.
-- [ ] Sidecar and Go library modes for embedding scanchat elsewhere.
+- [ ] Sidecar and Go library modes for embedding LLMBeam elsewhere.
 - [ ] Optional vision/image passthrough.
 
-Have a use case that should shape the roadmap? [Open an issue](https://github.com/shao-hua-li/scanchat/issues).
+Have a use case that should shape the roadmap? [Open an issue](https://github.com/shao-hua-li/llmbeam/issues).
 
 ## Contributing
 
@@ -251,9 +251,9 @@ make web
 
 For bug reports, include your OS, backend, model server version, browser, and the terminal output with secrets removed.
 
-## Help more people find scanchat
+## Help more people find LLMBeam
 
-If scanchat removes one annoying step from your local-LLM setup, consider [starring the repository](https://github.com/shao-hua-li/scanchat). It helps other local-AI builders discover the project.
+If LLMBeam removes one annoying step from your local-LLM setup, consider [starring the repository](https://github.com/shao-hua-li/llmbeam). It helps other local-AI builders discover the project.
 
 ## License
 

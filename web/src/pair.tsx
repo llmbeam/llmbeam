@@ -38,7 +38,7 @@ export function Pair({ code, onPaired }: PairProps) {
   if (connecting) {
     return (
       <main class="center" aria-live="polite">
-        <div class="mark" aria-hidden="true">sc</div>
+        <div class="mark" aria-hidden="true">LB</div>
         <div class="connecting">
           <span class="spinner" aria-hidden="true" />
           Connecting…
@@ -50,10 +50,10 @@ export function Pair({ code, onPaired }: PairProps) {
   return (
     <main class="center">
       <section class="pair-card" aria-labelledby="pair-title">
-        <div class="mark" aria-hidden="true">sc</div>
+        <div class="mark" aria-hidden="true">LB</div>
         <div>
           <p class="eyebrow">Secure local access</p>
-          <h1 id="pair-title">Connect to scanchat</h1>
+          <h1 id="pair-title">Connect to LLMBeam</h1>
           <p>Enter the pairing code shown in your computer terminal.</p>
         </div>
         <form onSubmit={(event) => { event.preventDefault(); void connect(value) }}>

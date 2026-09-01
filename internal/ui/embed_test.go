@@ -27,7 +27,7 @@ func TestFSContainsBuiltWebApplication(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(index), "<title>scanchat</title>") {
-		t.Fatal("embedded index does not contain scanchat metadata")
+	if !strings.Contains(string(index), "<title>LLMBeam</title>") {
+		t.Fatal("embedded index does not contain LLMBeam metadata")
 	}
 }

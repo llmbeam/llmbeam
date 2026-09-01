@@ -65,7 +65,7 @@ function App() {
 function CheckingSession() {
   return (
     <main class="center" aria-live="polite">
-      <div class="mark" aria-hidden="true">sc</div>
+      <div class="mark" aria-hidden="true">LB</div>
       <div class="connecting">
         <span class="spinner" aria-hidden="true" />
         Checking session…

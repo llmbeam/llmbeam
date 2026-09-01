@@ -31,8 +31,8 @@ func TestLoadOMLXAPIKeyPriority(t *testing.T) {
 
 	getenv := func(name string) string {
 		switch name {
-		case "SCANCHAT_OMLX_API_KEY":
-			return "scanchat-key"
+		case "LLMBEAM_OMLX_API_KEY":
+			return "llmbeam-key"
 		case "OMLX_API_KEY":
 			return "omlx-key"
 		case "OMLX_BASE_PATH":
@@ -42,8 +42,8 @@ func TestLoadOMLXAPIKeyPriority(t *testing.T) {
 		}
 	}
 	homeDir := func() (string, error) { return home, nil }
-	if got := loadOMLXAPIKey(getenv, homeDir, "linux"); got != "scanchat-key" {
-		t.Fatalf("explicit scanchat key = %q", got)
+	if got := loadOMLXAPIKey(getenv, homeDir, "linux"); got != "llmbeam-key" {
+		t.Fatalf("explicit llmbeam key = %q", got)
 	}
 
 	getenv = func(name string) string {
@@ -119,11 +119,11 @@ func TestDiscoverConfiguresBackendAuth(t *testing.T) {
 		envName   string
 		custom    bool
 	}{
-		{backendID: "ollama", envName: "SCANCHAT_OLLAMA_API_KEY"},
-		{backendID: "lm-studio", envName: "SCANCHAT_LM_STUDIO_API_KEY"},
-		{backendID: "llama.cpp", envName: "SCANCHAT_LLAMA_CPP_API_KEY"},
-		{backendID: "omlx", envName: "SCANCHAT_OMLX_API_KEY"},
-		{backendID: "custom-1", envName: "SCANCHAT_CUSTOM_1_API_KEY", custom: true},
+		{backendID: "ollama", envName: "LLMBEAM_OLLAMA_API_KEY"},
+		{backendID: "lm-studio", envName: "LLMBEAM_LM_STUDIO_API_KEY"},
+		{backendID: "llama.cpp", envName: "LLMBEAM_LLAMA_CPP_API_KEY"},
+		{backendID: "omlx", envName: "LLMBEAM_OMLX_API_KEY"},
+		{backendID: "custom-1", envName: "LLMBEAM_CUSTOM_1_API_KEY", custom: true},
 	}
 	for _, test := range tests {
 		t.Run(test.backendID, func(t *testing.T) {

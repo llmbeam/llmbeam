@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shao-hua-li/scanchat/internal/backend"
-	"github.com/shao-hua-li/scanchat/internal/pair"
+	"github.com/shao-hua-li/llmbeam/internal/backend"
+	"github.com/shao-hua-li/llmbeam/internal/pair"
 )
 
 func fakeStreamingUpstream(t *testing.T) (*httptest.Server, <-chan map[string]any) {
@@ -82,7 +82,7 @@ func TestChatProxyStreamsSSE(t *testing.T) {
 }
 
 func TestChatSendsAndRefreshesBackendAuth(t *testing.T) {
-	t.Setenv("SCANCHAT_CUSTOM_1_API_KEY", "old-key")
+	t.Setenv("LLMBEAM_CUSTOM_1_API_KEY", "old-key")
 	var requests atomic.Int32
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attempt := requests.Add(1)
@@ -90,7 +90,7 @@ func TestChatSendsAndRefreshesBackendAuth(t *testing.T) {
 			if r.Header.Get("Authorization") != "Bearer old-key" {
 				t.Errorf("first Authorization = %q", r.Header.Get("Authorization"))
 			}
-			if err := os.Setenv("SCANCHAT_CUSTOM_1_API_KEY", "new-key"); err != nil {
+			if err := os.Setenv("LLMBEAM_CUSTOM_1_API_KEY", "new-key"); err != nil {
 				t.Errorf("set refreshed key: %v", err)
 			}
 			w.WriteHeader(http.StatusUnauthorized)

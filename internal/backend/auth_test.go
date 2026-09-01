@@ -14,11 +14,11 @@ func TestBackendAPIKeyEnvironmentNames(t *testing.T) {
 		backendID string
 		want      []string
 	}{
-		{backendID: "ollama", want: []string{"SCANCHAT_OLLAMA_API_KEY"}},
-		{backendID: "lm-studio", want: []string{"SCANCHAT_LM_STUDIO_API_KEY"}},
-		{backendID: "llama.cpp", want: []string{"SCANCHAT_LLAMA_CPP_API_KEY", "LLAMA_ARG_API_KEY"}},
-		{backendID: "omlx", want: []string{"SCANCHAT_OMLX_API_KEY", "OMLX_API_KEY"}},
-		{backendID: "custom-1", want: []string{"SCANCHAT_CUSTOM_1_API_KEY"}},
+		{backendID: "ollama", want: []string{"LLMBEAM_OLLAMA_API_KEY"}},
+		{backendID: "lm-studio", want: []string{"LLMBEAM_LM_STUDIO_API_KEY"}},
+		{backendID: "llama.cpp", want: []string{"LLMBEAM_LLAMA_CPP_API_KEY", "LLAMA_ARG_API_KEY"}},
+		{backendID: "omlx", want: []string{"LLMBEAM_OMLX_API_KEY", "OMLX_API_KEY"}},
+		{backendID: "custom-1", want: []string{"LLMBEAM_CUSTOM_1_API_KEY"}},
 	}
 	for _, test := range tests {
 		t.Run(test.backendID, func(t *testing.T) {
@@ -35,17 +35,17 @@ func TestBackendAPIKeyEnvironmentNames(t *testing.T) {
 	}
 }
 
-func TestLoadBackendAPIKeyUsesScanchatOverrideThenNative(t *testing.T) {
+func TestLoadBackendAPIKeyUsesLLMBeamOverrideThenNative(t *testing.T) {
 	homeDir := func() (string, error) { return "", errors.New("unused") }
 	values := map[string]string{
-		"SCANCHAT_LLAMA_CPP_API_KEY": "scanchat-key",
-		"LLAMA_ARG_API_KEY":          "native-key",
+		"LLMBEAM_LLAMA_CPP_API_KEY": "llmbeam-key",
+		"LLAMA_ARG_API_KEY":         "native-key",
 	}
 	getenv := func(name string) string { return values[name] }
-	if got := loadBackendAPIKey("llama.cpp", getenv, homeDir, "linux"); got != "scanchat-key" {
-		t.Fatalf("scanchat override = %q", got)
+	if got := loadBackendAPIKey("llama.cpp", getenv, homeDir, "linux"); got != "llmbeam-key" {
+		t.Fatalf("llmbeam override = %q", got)
 	}
-	delete(values, "SCANCHAT_LLAMA_CPP_API_KEY")
+	delete(values, "LLMBEAM_LLAMA_CPP_API_KEY")
 	if got := loadBackendAPIKey("llama.cpp", getenv, homeDir, "linux"); got != "native-key" {
 		t.Fatalf("native fallback = %q", got)
 	}

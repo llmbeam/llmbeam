@@ -34,8 +34,8 @@ func loadBackendAPIKey(
 }
 
 func backendAPIKeyEnvironment(backendID string) []string {
-	scanchatName := "SCANCHAT_" + strings.NewReplacer("-", "_", ".", "_").Replace(strings.ToUpper(backendID)) + "_API_KEY"
-	names := []string{scanchatName}
+	llmbeamName := "LLMBEAM_" + strings.NewReplacer("-", "_", ".", "_").Replace(strings.ToUpper(backendID)) + "_API_KEY"
+	names := []string{llmbeamName}
 	switch backendID {
 	case "llama.cpp":
 		names = append(names, "LLAMA_ARG_API_KEY")

@@ -4,7 +4,7 @@ web:
 	cd web && npm ci && npm run build
 
 build: web
-	go build -trimpath -ldflags "-s -w" -o scanchat .
+	go build -trimpath -ldflags "-s -w" -o llmbeam .
 
 test:
 	go test ./...

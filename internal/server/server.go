@@ -11,8 +11,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/shao-hua-li/scanchat/internal/backend"
-	"github.com/shao-hua-li/scanchat/internal/pair"
+	"github.com/shao-hua-li/llmbeam/internal/backend"
+	"github.com/shao-hua-li/llmbeam/internal/pair"
 )
 
 const sessionCookieName = "sc_session"

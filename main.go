@@ -18,14 +18,14 @@ import (
 
 	"github.com/mdp/qrterminal/v3"
 
-	"github.com/shao-hua-li/scanchat/internal/backend"
-	"github.com/shao-hua-li/scanchat/internal/netutil"
-	"github.com/shao-hua-li/scanchat/internal/pair"
-	"github.com/shao-hua-li/scanchat/internal/server"
-	"github.com/shao-hua-li/scanchat/internal/ui"
+	"github.com/shao-hua-li/llmbeam/internal/backend"
+	"github.com/shao-hua-li/llmbeam/internal/netutil"
+	"github.com/shao-hua-li/llmbeam/internal/pair"
+	"github.com/shao-hua-li/llmbeam/internal/server"
+	"github.com/shao-hua-li/llmbeam/internal/ui"
 )
 
-const AppName = "scanchat"
+const AppName = "llmbeam"
 
 var version = "dev"
 

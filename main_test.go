@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shao-hua-li/scanchat/internal/pair"
+	"github.com/shao-hua-li/llmbeam/internal/pair"
 )
 
 func TestParseConfig(t *testing.T) {

@@ -1,7 +1,7 @@
 {
-  "name": "scanchat",
-  "short_name": "scanchat",
-  "description": "Chat with local LLMs from any device on your network.",
+  "name": "LLMBeam",
+  "short_name": "LLMBeam",
+  "description": "Beam local LLMs to your phone. One command, one scan, zero cloud.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -10,8 +10,8 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/shao-hua-li/scanchat/internal/backend"
-	"github.com/shao-hua-li/scanchat/internal/pair"
+	"github.com/shao-hua-li/llmbeam/internal/backend"
+	"github.com/shao-hua-li/llmbeam/internal/pair"
 )
 
 func newTestServer(t *testing.T, backends []*backend.Backend, static fstest.MapFS) (*httptest.Server, *pair.Manager) {
@@ -192,7 +192,7 @@ func TestHealthzIsOpenAndHasSecurityHeaders(t *testing.T) {
 }
 
 func TestStaticAssetsAreOpen(t *testing.T) {
-	static := fstest.MapFS{"index.html": {Data: []byte("<h1>scanchat</h1>")}}
+	static := fstest.MapFS{"index.html": {Data: []byte("<h1>llmbeam</h1>")}}
 	server, _ := newTestServer(t, nil, static)
 	response, err := http.Get(server.URL + "/")
 	if err != nil {
@@ -200,7 +200,7 @@ func TestStaticAssetsAreOpen(t *testing.T) {
 	}
 	defer response.Body.Close()
 	body, _ := io.ReadAll(response.Body)
-	if response.StatusCode != http.StatusOK || !strings.Contains(string(body), "scanchat") {
+	if response.StatusCode != http.StatusOK || !strings.Contains(string(body), "llmbeam") {
 		t.Fatalf("static response status=%d body=%q", response.StatusCode, body)
 	}
 }

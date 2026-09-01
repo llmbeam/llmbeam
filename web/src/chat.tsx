@@ -37,7 +37,7 @@ export function Chat() {
         return
       }
       setModels([])
-      setLoadError('Could not reach scanchat. Check the computer and try again.')
+      setLoadError('Could not reach LLMBeam. Check the computer and try again.')
     } finally {
       setLoading(false)
     }
@@ -125,7 +125,7 @@ export function Chat() {
   return (
     <main class="chat-shell">
       <header class="chat-header">
-        <div class="brand"><span aria-hidden="true">sc</span>scanchat</div>
+        <div class="brand"><span aria-hidden="true">LB</span>LLMBeam</div>
         <label class="sr-only" for="model-select">Model</label>
         <select
           id="model-select"
@@ -198,7 +198,7 @@ function ModelState({ loading = false, error = '', onRetry }: {
 }) {
   return (
     <main class="center model-state" aria-live="polite">
-      <div class="mark" aria-hidden="true">sc</div>
+      <div class="mark" aria-hidden="true">LB</div>
       {loading ? <div class="connecting"><span class="spinner" />Finding models…</div> : (
         <>
           <h1>No models found.</h1>
@@ -231,9 +231,9 @@ function errorMessage(error: unknown) {
 }
 
 function readStoredModel() {
-  try { return localStorage.getItem('sc_model') ?? '' } catch { return '' }
+  try { return localStorage.getItem('llmbeam_model') ?? '' } catch { return '' }
 }
 
 function storeModel(model: string) {
-  try { if (model) localStorage.setItem('sc_model', model) } catch { /* storage may be unavailable */ }
+  try { if (model) localStorage.setItem('llmbeam_model', model) } catch { /* storage may be unavailable */ }
 }

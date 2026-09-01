@@ -1,4 +1,4 @@
-module github.com/shao-hua-li/scanchat
+module github.com/shao-hua-li/llmbeam
 
 go 1.22
 
