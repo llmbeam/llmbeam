@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:remote": "tsc -b && vite build --config vite.remote.config.ts",
     "preview": "vite preview",
     "typecheck": "tsc -b"
   },

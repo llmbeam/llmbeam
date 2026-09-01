@@ -9,8 +9,13 @@ export interface ChatMessage {
   content: string
 }
 
+function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const implementation = window.__LLMBEAM_FETCH__ ?? window.fetch.bind(window)
+  return implementation(input, init)
+}
+
 export async function pairWithCode(code: string): Promise<boolean> {
-  const response = await fetch('/api/pair', {
+  const response = await apiFetch('/api/pair', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
@@ -19,12 +24,12 @@ export async function pairWithCode(code: string): Promise<boolean> {
 }
 
 export async function hasSession(): Promise<boolean> {
-  const response = await fetch('/api/session')
+  const response = await apiFetch('/api/session')
   return response.ok
 }
 
 export async function listModels(): Promise<ModelInfo[]> {
-  const response = await fetch('/api/models')
+  const response = await apiFetch('/api/models')
   if (response.status === 401) throw new Error('unauthenticated')
   if (!response.ok) throw new Error(`models failed: ${response.status}`)
 
@@ -38,7 +43,7 @@ export async function streamChat(
   onDelta: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const response = await fetch('/api/chat', {
+  const response = await apiFetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, messages }),

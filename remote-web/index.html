@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b0e14" />
+    <meta
+      name="description"
+      content="Securely beam local LLMs to your phone from anywhere."
+    />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>LLMBeam Connect</title>
+  </head>
+  <body>
+    <div id="app">
+      <main class="center" aria-live="polite">
+        <div class="mark" aria-hidden="true">LB</div>
+        <div class="connecting">
+          <span class="spinner" aria-hidden="true"></span>
+          Loading secure connection…
+        </div>
+      </main>
+    </div>
+    <script src="./wasm_exec.js"></script>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
