@@ -56,6 +56,14 @@ brew install shao-hua-li/tap/llmbeam
 
 Upgrade later with `brew upgrade llmbeam`.
 
+If macOS blocks the first launch with “Apple could not verify `llmbeam` is free of malware,” verify that you installed LLMBeam from this repository and then remove the quarantine attribute:
+
+```sh
+xattr -d com.apple.quarantine "$(which llmbeam)"
+```
+
+This is a temporary workaround while the macOS binary is not yet Apple-notarized. Do not run it on binaries downloaded from untrusted sources.
+
 Prebuilt archives for macOS, Linux, and Windows are also available from [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest). Each release includes amd64 and arm64 builds plus a `checksums.txt` file.
 
 Alternatively, install with Go 1.27+:

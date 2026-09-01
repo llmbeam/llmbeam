@@ -54,6 +54,14 @@ brew install shao-hua-li/tap/llmbeam
 
 后续使用 `brew upgrade llmbeam` 即可升级。
 
+如果 macOS 首次启动时提示“Apple 无法验证 `llmbeam` 是否包含可能危害 Mac 或泄露隐私的恶意软件”，请先确认 LLMBeam 来自本仓库，然后移除隔离属性：
+
+```sh
+xattr -d com.apple.quarantine "$(which llmbeam)"
+```
+
+这是 macOS 二进制尚未经过 Apple 公证期间的临时解决方案。请勿对来源不可信的二进制文件执行此命令。
+
 也可以从 [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest) 下载 macOS、Linux 或 Windows 的预编译压缩包。每个版本都会提供 amd64、arm64 构建以及 `checksums.txt` 校验文件。
 
 或者使用 Go 1.27+ 安装：
