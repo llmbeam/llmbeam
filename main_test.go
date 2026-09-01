@@ -127,15 +127,15 @@ func TestChooseQRLayoutAdaptsToTerminalSize(t *testing.T) {
 
 	_, standardHeight := standard.dimensions(code.Size)
 	tooShort := chooseQRLayout(payload, 100, standardHeight+pairingOutputRows-2)
-	if tooShort.show {
-		t.Fatalf("short terminal layout = %+v, want address fallback", tooShort)
+	if !tooShort.show || tooShort.quietZone != 1 {
+		t.Fatalf("short terminal layout = %+v, want scrollable QR", tooShort)
 	}
 }
 
 func TestRemoteQRCodeDoesNotOverflowShortTerminal(t *testing.T) {
 	payload := "https://shao-hua-li.github.io/llmbeam/#/connect/" + strings.Repeat("t", 225) + "/2345ABCD"
 	layout := chooseQRLayout(payload, 80, 24)
-	if layout.show {
-		t.Fatalf("remote QR layout = %+v, want address fallback", layout)
+	if !layout.show || layout.quietZone != 1 {
+		t.Fatalf("remote QR layout = %+v, want scrollable QR", layout)
 	}
 }

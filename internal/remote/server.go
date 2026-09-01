@@ -44,7 +44,7 @@ func Start(handler http.Handler) (*Server, error) {
 }
 
 func (server *Server) Token() string {
-	return compressToken(string(server.tailcat.ConnBlob()))
+	return compressToken(compactToken(string(server.tailcat.ConnBlob())))
 }
 
 func (server *Server) Close() error {
@@ -69,4 +69,15 @@ func compressToken(token string) string {
 		return token
 	}
 	return encoded
+}
+
+func compactToken(token string) string {
+	blob := tailcat.ConnBlob(token)
+	info, err := tailcat.ParseConnBlob(blob)
+	if err != nil || len(info.Region) != 1 {
+		return token
+	}
+	info.RegionID = info.Region[0].RegionID
+	info.Region = nil
+	return string(info.ConnBlob())
 }

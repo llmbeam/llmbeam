@@ -40,6 +40,14 @@ func TestCompressToken(t *testing.T) {
 	}
 }
 
+func TestCompactToken(t *testing.T) {
+	original := "tco2FwWCDjqx9oQSXTC8J8DHVuD3u-8__YOMLyG3cf9wLyEDukLGFrWCBT1upMovkJpmWuZN8hhVMuC8JvDCkVuznCoQDE7y5qDWFygaFhToGjYWhudGMzMDRhLmlwbi5kZXZhNG0yMDguMTExLjM5LjM4YTZzMjYwNzpmNzQwOjA6M2Y6OjcyMA"
+	compact := compactToken(original)
+	if compact == original || len(compact) >= len(original) {
+		t.Fatalf("compact token length = %d, original length = %d", len(compact), len(original))
+	}
+}
+
 func TestServeConnectionBridgesStreamingHTTP(t *testing.T) {
 	serverConnection, clientConnection := net.Pipe()
 	t.Cleanup(func() { clientConnection.Close() })

@@ -310,6 +310,9 @@ func chooseQRLayout(payload string, columns, rows int) qrLayout {
 			return layout
 		}
 	}
+	if columns >= code.Size+2 {
+		return qrLayout{show: true, quietZone: 1}
+	}
 	return qrLayout{}
 }
 
