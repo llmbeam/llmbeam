@@ -7,6 +7,7 @@ require (
 	github.com/tailscale/tailcat v0.4.0
 	golang.org/x/term v0.45.0
 	rsc.io/qr v0.2.0
+	tailscale.com v1.103.0-pre.0.20260830144538-72780705eda8
 )
 
 require (
@@ -55,5 +56,4 @@ require (
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	gvisor.dev/gvisor v0.0.0-20260224225140-573d5e7127a8 // indirect
-	tailscale.com v1.103.0-pre.0.20260830144538-72780705eda8 // indirect
 )

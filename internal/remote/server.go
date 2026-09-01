@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/tailscale/tailcat"
+	_ "tailscale.com/feature/condregister/useproxy"
 )
 
 const tunnelPort = 443
