@@ -15,10 +15,10 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #app { min-height: 100%; margin: 0; }
+html, body, #app { width: 100%; min-height: 100%; margin: 0; }
+html, body { overflow-x: hidden; }
 
 body {
-  min-width: 320px;
   min-height: 100dvh;
   background: radial-gradient(circle at 50% 15%, rgb(82 119 255 / 14%), transparent 40%), var(--bg);
 }
@@ -30,6 +30,8 @@ button:focus-visible { outline: 3px solid rgb(139 163 255 / 35%); outline-offset
 button:disabled { cursor: not-allowed; opacity: 0.42; }
 
 .center {
+  width: 100%;
+  min-width: 0;
   min-height: 100dvh;
   padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
   display: grid;
@@ -58,6 +60,7 @@ p { margin: 10px 0 0; color: var(--muted); font-size: 0.92rem; line-height: 1.55
 
 .pair-card {
   width: min(100%, 410px);
+  min-width: 0;
   padding: 30px;
   display: grid;
   gap: 24px;
@@ -100,7 +103,8 @@ p { margin: 10px 0 0; color: var(--muted); font-size: 0.92rem; line-height: 1.55
 .model-state p { max-width: 390px; }
 .model-state button { min-width: 120px; margin-top: 4px; }
 
-.chat-shell { height: 100dvh; max-width: 920px; margin: auto; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; background: rgb(11 14 20 / 82%); }
+.chat-shell { width: 100%; min-width: 0; height: 100dvh; max-width: 920px; margin: auto; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; background: rgb(11 14 20 / 82%); }
+.chat-shell > * { min-width: 0; }
 .chat-header {
   position: sticky;
   top: 0;
@@ -115,12 +119,12 @@ p { margin: 10px 0 0; color: var(--muted); font-size: 0.92rem; line-height: 1.55
   backdrop-filter: blur(16px);
 }
 
-.brand { display: flex; align-items: center; gap: 9px; color: #fff; font-weight: 750; letter-spacing: -0.02em; }
-.brand span { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #343d4e; border-radius: 9px; background: var(--panel-2); font: 700 12px/1 ui-monospace, monospace; }
-.chat-header select { min-width: 0; max-width: 58%; padding: 8px 30px 8px 10px; border: 1px solid #343d4e; border-radius: 9px; color: var(--text); background: var(--panel-2); }
+.brand { min-width: 0; display: flex; align-items: center; gap: 9px; color: #fff; font-weight: 750; letter-spacing: -0.02em; }
+.brand span { width: 30px; height: 30px; flex: 0 0 30px; display: grid; place-items: center; border: 1px solid #343d4e; border-radius: 9px; background: var(--panel-2); font: 700 12px/1 ui-monospace, monospace; }
+.chat-header select { width: min(58%, 360px); min-width: 0; max-width: 58%; padding: 8px 30px 8px 10px; border: 1px solid #343d4e; border-radius: 9px; color: var(--text); background: var(--panel-2); text-overflow: ellipsis; }
 
-.message-list { min-height: 0; padding: 28px max(18px, calc((100% - 760px) / 2)); overflow-y: auto; overscroll-behavior: contain; }
-.empty-chat { min-height: 100%; display: grid; place-content: center; text-align: center; }
+.message-list { min-width: 0; min-height: 0; padding: 28px max(18px, calc((100% - 760px) / 2)); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+.empty-chat { width: 100%; min-width: 0; min-height: 100%; display: grid; place-content: center; text-align: center; }
 .empty-chat p:last-child { max-width: 420px; }
 .message { width: fit-content; max-width: min(86%, 690px); margin-bottom: 22px; overflow-wrap: anywhere; line-height: 1.65; }
 .message.user { margin-left: auto; padding: 11px 15px; border-radius: 17px 17px 4px 17px; color: #0b1120; background: var(--accent); }
@@ -131,14 +135,14 @@ p { margin: 10px 0 0; color: var(--muted); font-size: 0.92rem; line-height: 1.55
 .message h1, .message h2, .message h3 { margin: 1em 0 0.45em; color: inherit; font-size: 1.12em; letter-spacing: -0.02em; }
 .message ul { margin: 0.5em 0; padding-left: 1.4em; }
 .message code { padding: 0.15em 0.35em; border-radius: 5px; background: #202633; font: 0.88em/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
-.message pre { margin: 0.8em 0; padding: 14px; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: #080b10; }
+.message pre { max-width: 100%; margin: 0.8em 0; padding: 14px; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: #080b10; }
 .message pre code { padding: 0; background: none; }
 .stream-cursor { display: inline-block; width: 7px; height: 1.05em; margin-left: 3px; vertical-align: -0.15em; background: var(--accent); animation: blink 0.9s steps(2) infinite; }
 
-.composer { padding: 12px max(14px, calc((100% - 760px) / 2)) max(12px, env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 10px; border-top: 1px solid var(--border); background: rgb(11 14 20 / 94%); }
-.composer textarea { min-height: 46px; max-height: 140px; flex: 1; resize: none; padding: 12px 14px; border: 1px solid #343d4e; border-radius: 13px; outline: none; color: var(--text); background: var(--panel); line-height: 1.4; }
+.composer { min-width: 0; padding: 12px max(14px, calc((100% - 760px) / 2)) max(12px, env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 10px; border-top: 1px solid var(--border); background: rgb(11 14 20 / 94%); }
+.composer textarea { width: 100%; min-width: 0; min-height: 46px; max-height: 140px; flex: 1 1 auto; resize: none; padding: 12px 14px; border: 1px solid #343d4e; border-radius: 13px; outline: none; color: var(--text); background: var(--panel); line-height: 1.4; }
 .composer textarea:focus { border-color: #7894ff; box-shadow: 0 0 0 3px rgb(120 148 255 / 12%); }
-.composer button { min-width: 68px; }
+.composer button { min-width: 68px; flex: 0 0 auto; }
 .composer .stop { color: #f2b0b0; background: #3b2228; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
@@ -152,5 +156,6 @@ p { margin: 10px 0 0; color: var(--muted); font-size: 0.92rem; line-height: 1.55
   .pair-card { padding: 24px 20px; border-radius: 20px; }
   .chat-header { gap: 10px; }
   .brand { font-size: 0.92rem; }
+  .chat-header select { width: 52%; max-width: 52%; }
   .message { max-width: 91%; }
 }
