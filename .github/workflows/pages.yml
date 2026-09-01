@@ -1,0 +1,64 @@
+name: deploy remote page
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pages.yml"
+      - "remote-web/**"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: tailscale/tailcat
+          ref: ce6fedcabc220bab3b94d470ab330219111eeae8
+          path: tailcat
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tailcat/go.mod
+          cache: false
+
+      - name: Build Tailcat WASM
+        working-directory: tailcat
+        run: go run ./cmd/tailcat-webdist -o ../pages
+
+      - name: Keep GitHub Pages assets
+        run: |
+          rm pages/main.wasm
+          rm pages/main.wasm.zst
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
