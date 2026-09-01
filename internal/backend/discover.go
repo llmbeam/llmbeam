@@ -63,10 +63,7 @@ func Discover(extras []string, timeout time.Duration) ([]ProbeResult, []*Backend
 	results := make([]ProbeResult, len(candidates))
 	var wait sync.WaitGroup
 	for index, candidate := range candidates {
-		item := &Backend{ID: candidate.ID, BaseURL: candidate.BaseURL}
-		if candidate.ID == "omlx" {
-			item.apiKey, item.apiKeyLoader = omlxCredentials()
-		}
+		item := NewBackend(candidate.ID, candidate.BaseURL)
 		backends[index] = item
 		wait.Add(1)
 		go func() {

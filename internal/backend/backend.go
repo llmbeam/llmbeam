@@ -27,6 +27,14 @@ type Backend struct {
 	apiKeyLoader credentialLoader
 }
 
+// NewBackend creates an OpenAI-compatible backend with automatic credential
+// discovery for its stable backend ID.
+func NewBackend(id, baseURL string) *Backend {
+	item := &Backend{ID: id, BaseURL: baseURL}
+	item.apiKey, item.apiKeyLoader = backendCredentials(id)
+	return item
+}
+
 // ModelInfo is the gateway-facing identity of an upstream model.
 type ModelInfo struct {
 	ID      string `json:"id"`

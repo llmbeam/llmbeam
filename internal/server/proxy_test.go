@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -76,6 +78,48 @@ func TestChatProxyStreamsSSE(t *testing.T) {
 	}
 	if upstreamPayload["temperature"] != 0.2 {
 		t.Fatalf("transparent request field was lost: %+v", upstreamPayload)
+	}
+}
+
+func TestChatSendsAndRefreshesBackendAuth(t *testing.T) {
+	t.Setenv("SCANCHAT_CUSTOM_1_API_KEY", "old-key")
+	var requests atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempt := requests.Add(1)
+		if attempt == 1 {
+			if r.Header.Get("Authorization") != "Bearer old-key" {
+				t.Errorf("first Authorization = %q", r.Header.Get("Authorization"))
+			}
+			if err := os.Setenv("SCANCHAT_CUSTOM_1_API_KEY", "new-key"); err != nil {
+				t.Errorf("set refreshed key: %v", err)
+			}
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if r.Header.Get("Authorization") != "Bearer new-key" {
+			t.Errorf("refreshed Authorization = %q", r.Header.Get("Authorization"))
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte("data: [DONE]\n\n"))
+	}))
+	t.Cleanup(upstream.Close)
+
+	item := backend.NewBackend("custom-1", upstream.URL)
+	server, pairs := newProxyTestServer(t, []*backend.Backend{item})
+	cookie, _ := pairUp(t, server, pairs, "test")
+	request, _ := http.NewRequest(http.MethodPost, server.URL+"/api/chat",
+		strings.NewReader(`{"model":"custom-1/m","messages":[]}`))
+	request.AddCookie(cookie)
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", response.StatusCode)
+	}
+	if requests.Load() != 2 {
+		t.Fatalf("requests = %d, want one authenticated retry", requests.Load())
 	}
 }
 

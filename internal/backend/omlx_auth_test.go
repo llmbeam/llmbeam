@@ -113,26 +113,47 @@ func TestModelsSendsAndRefreshesBearerKey(t *testing.T) {
 	}
 }
 
-func TestDiscoverConfiguresOMLXAuth(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer discover-key" {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "model"}}})
-	}))
-	t.Cleanup(server.Close)
-
-	original := wellKnown
-	wellKnown = []Candidate{{ID: "omlx", BaseURL: server.URL, Loopback: true}}
-	t.Cleanup(func() { wellKnown = original })
-	t.Setenv("SCANCHAT_OMLX_API_KEY", "discover-key")
-
-	results, _, err := Discover(nil, 500*time.Millisecond)
-	if err != nil {
-		t.Fatal(err)
+func TestDiscoverConfiguresBackendAuth(t *testing.T) {
+	tests := []struct {
+		backendID string
+		envName   string
+		custom    bool
+	}{
+		{backendID: "ollama", envName: "SCANCHAT_OLLAMA_API_KEY"},
+		{backendID: "lm-studio", envName: "SCANCHAT_LM_STUDIO_API_KEY"},
+		{backendID: "llama.cpp", envName: "SCANCHAT_LLAMA_CPP_API_KEY"},
+		{backendID: "omlx", envName: "SCANCHAT_OMLX_API_KEY"},
+		{backendID: "custom-1", envName: "SCANCHAT_CUSTOM_1_API_KEY", custom: true},
 	}
-	if len(results) != 1 || !results[0].Up || results[0].ModelCount != 1 {
-		t.Fatalf("OMLX discovery = %+v", results)
+	for _, test := range tests {
+		t.Run(test.backendID, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("Authorization") != "Bearer discover-key" {
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "model"}}})
+			}))
+			t.Cleanup(server.Close)
+			t.Setenv(test.envName, "discover-key")
+
+			original := wellKnown
+			extras := []string(nil)
+			if test.custom {
+				wellKnown = nil
+				extras = []string{server.URL}
+			} else {
+				wellKnown = []Candidate{{ID: test.backendID, BaseURL: server.URL, Loopback: true}}
+			}
+			t.Cleanup(func() { wellKnown = original })
+
+			results, _, err := Discover(extras, 500*time.Millisecond)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(results) != 1 || !results[0].Up || results[0].ModelCount != 1 {
+				t.Fatalf("%s discovery = %+v", test.backendID, results)
+			}
+		})
 	}
 }
