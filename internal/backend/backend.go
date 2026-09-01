@@ -30,9 +30,22 @@ type Backend struct {
 // NewBackend creates an OpenAI-compatible backend with automatic credential
 // discovery for its stable backend ID.
 func NewBackend(id, baseURL string) *Backend {
+	return newBackendWithCredentials(id, baseURL, id)
+}
+
+func newBackendWithCredentials(id, baseURL, credentialID string) *Backend {
 	item := &Backend{ID: id, BaseURL: baseURL}
-	item.apiKey, item.apiKeyLoader = backendCredentials(id)
+	item.apiKey, item.apiKeyLoader = backendCredentials(credentialID)
 	return item
+}
+
+type modelsStatusError struct {
+	backendID string
+	status    int
+}
+
+func (e *modelsStatusError) Error() string {
+	return fmt.Sprintf("query %s models: status %d", e.backendID, e.status)
 }
 
 // ModelInfo is the gateway-facing identity of an upstream model.
@@ -69,7 +82,7 @@ func (b *Backend) Models(timeout time.Duration) ([]string, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 4<<10))
-		return nil, fmt.Errorf("query %s models: status %d", b.ID, response.StatusCode)
+		return nil, &modelsStatusError{backendID: b.ID, status: response.StatusCode}
 	}
 
 	var payload struct {

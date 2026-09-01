@@ -2,8 +2,12 @@ package backend
 
 import (
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -233,8 +237,13 @@ func findCandidate(candidates []Candidate, id string) (Candidate, bool) {
 
 func TestDiscoverKeepsOfflineCandidates(t *testing.T) {
 	original := wellKnown
+	originalScan := scanLoopback
 	wellKnown = []Candidate{{ID: "offline", BaseURL: "http://127.0.0.1:1/v1", Loopback: true}}
-	t.Cleanup(func() { wellKnown = original })
+	scanLoopback = func(map[int]struct{}, time.Duration) []ProbeResult { return nil }
+	t.Cleanup(func() {
+		wellKnown = original
+		scanLoopback = originalScan
+	})
 
 	server := fakeOpenAI(t, "m1")
 	results, backends, err := Discover([]string{strings.TrimSuffix(server.URL, "/")}, 200*time.Millisecond)
@@ -246,5 +255,139 @@ func TestDiscoverKeepsOfflineCandidates(t *testing.T) {
 	}
 	if len(backends) != 2 || backends[0].ID != "offline" || backends[1].BaseURL != server.URL+"/v1" {
 		t.Fatalf("Discover() backends = %+v", backends)
+	}
+}
+
+func TestScanLoopbackFindsOpenAICompatibleService(t *testing.T) {
+	server := fakeOpenAI(t, "m1", "m2")
+	parsed, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := strconv.Atoi(parsed.Port())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(fmt.Sprintf("LLMBEAM_LOCAL_%d_API_KEY", port), "")
+
+	results := scanLoopbackRange(port, port, 1, nil, 500*time.Millisecond)
+	if len(results) != 1 {
+		t.Fatalf("scanLoopbackRange() = %+v", results)
+	}
+	wantID := fmt.Sprintf("local-%d", port)
+	if result := results[0]; result.Candidate.ID != wantID ||
+		result.Candidate.BaseURL != server.URL+"/v1" || result.ModelCount != 2 {
+		t.Fatalf("scan result = %+v", result)
+	}
+}
+
+func TestScanLoopbackRejectsNonOpenAIService(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("hello"))
+	}))
+	t.Cleanup(server.Close)
+	parsed, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := strconv.Atoi(parsed.Port())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(fmt.Sprintf("LLMBEAM_LOCAL_%d_API_KEY", port), "")
+
+	if results := scanLoopbackRange(port, port, 1, nil, 500*time.Millisecond); len(results) != 0 {
+		t.Fatalf("non-OpenAI service matched: %+v", results)
+	}
+}
+
+func TestScanLoopbackUsesConfiguredFrameworkCredential(t *testing.T) {
+	for _, name := range []string{
+		"LLMBEAM_OLLAMA_API_KEY",
+		"LLMBEAM_LM_STUDIO_API_KEY",
+		"LLMBEAM_LLAMA_CPP_API_KEY",
+		"LLAMA_ARG_API_KEY",
+		"LLMBEAM_OMLX_API_KEY",
+		"OMLX_API_KEY",
+	} {
+		t.Setenv(name, "")
+	}
+	t.Setenv("LLMBEAM_OMLX_API_KEY", "scan-key")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer scan-key" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`{"data":[{"id":"m1"}]}`))
+	}))
+	t.Cleanup(server.Close)
+	parsed, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := strconv.Atoi(parsed.Port())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(fmt.Sprintf("LLMBEAM_LOCAL_%d_API_KEY", port), "")
+
+	results := scanLoopbackRange(port, port, 1, nil, 500*time.Millisecond)
+	if len(results) != 1 {
+		t.Fatalf("authenticated scan = %+v", results)
+	}
+	wantID := fmt.Sprintf("omlx-%d", port)
+	if results[0].Candidate.ID != wantID || results[0].Candidate.authID != "omlx" {
+		t.Fatalf("authenticated candidate = %+v", results[0].Candidate)
+	}
+	models, err := backendForCandidate(results[0].Candidate).Models(500 * time.Millisecond)
+	if err != nil || len(models) != 1 || models[0] != "m1" {
+		t.Fatalf("registered backend models = %v, %v", models, err)
+	}
+}
+
+func TestScanDoesNotSendFrameworkCredentialWithoutUnauthorized(t *testing.T) {
+	t.Setenv("LLMBEAM_OMLX_API_KEY", "must-not-leak")
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		if authorization := r.Header.Get("Authorization"); authorization != "" {
+			t.Errorf("unexpected Authorization header %q", authorization)
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(server.Close)
+	parsed, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := strconv.Atoi(parsed.Port())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(fmt.Sprintf("LLMBEAM_LOCAL_%d_API_KEY", port), "")
+
+	if results := scanLoopbackRange(port, port, 1, nil, 500*time.Millisecond); len(results) != 0 {
+		t.Fatalf("failed service matched: %+v", results)
+	}
+	if requests.Load() != 1 {
+		t.Fatalf("requests = %d, want one unauthenticated probe", requests.Load())
+	}
+}
+
+func TestOpenLoopbackPortsHonorsExclusions(t *testing.T) {
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = listener.Close() })
+	port := listener.Addr().(*net.TCPAddr).Port
+
+	ports := openLoopbackPorts(port, port, 1, nil, 100*time.Millisecond)
+	if len(ports) != 1 || ports[0] != port {
+		t.Fatalf("openLoopbackPorts() = %v", ports)
+	}
+	ports = openLoopbackPorts(port, port, 1, map[int]struct{}{port: {}}, 100*time.Millisecond)
+	if len(ports) != 0 {
+		t.Fatalf("excluded ports = %v", ports)
 	}
 }

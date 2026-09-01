@@ -105,7 +105,7 @@ Remote access is experimental. Anyone holding the current remote URL and pairing
 
 Other useful details:
 
-- **Automatic discovery:** Ollama, LM Studio, llama.cpp, and OMLX on macOS.
+- **Automatic discovery:** scans every localhost port for Ollama, LM Studio, llama.cpp, OMLX, and other OpenAI-compatible servers.
 - **Multiple backends:** choose namespaced models such as `ollama/llama3.2` or `lm-studio/qwen2.5` from one picker.
 - **Bring your own endpoint:** repeat `--backend URL` for any OpenAI-compatible server.
 - **Mobile-first UI:** safe-area support, streaming Markdown, model switching, and a Stop button.
@@ -116,13 +116,14 @@ Other useful details:
 
 | Backend | Auto-detected endpoint | Status |
 | --- | --- | --- |
-| [Ollama](https://ollama.com/) | `http://127.0.0.1:11434/v1` | Automatic |
-| [LM Studio](https://lmstudio.ai/) | `http://127.0.0.1:1234/v1` | Automatic |
-| [llama.cpp](https://github.com/ggml-org/llama.cpp) | `http://127.0.0.1:8080/v1` | Automatic |
-| OMLX | `http://127.0.0.1:8000/v1` | Automatic on macOS |
-| Any OpenAI-compatible API | `llmbeam --backend http://host:port/v1` | Manual |
+| [Ollama](https://ollama.com/) | Default or custom localhost port | Automatic |
+| [LM Studio](https://lmstudio.ai/) | Default or custom localhost port | Automatic |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) | Default or custom localhost port | Automatic |
+| OMLX | Default or custom localhost port | Automatic |
+| Any OpenAI-compatible API | Standard `/v1` on any localhost port | Automatic |
+| Remote or non-standard API path | `llmbeam --backend http://host:port/path` | Manual |
 
-A compatible backend only needs `GET /models` and streaming `POST /chat/completions` endpoints.
+At startup, LLMBeam scans `127.0.0.1:1-65535` and keeps only services that return a valid OpenAI `GET /v1/models` response. It never scans your LAN or public network. Non-default endpoints receive a stable ID such as `local-18080`; authenticated matches use the framework name, such as `omlx-18080`. A compatible backend also needs a streaming `POST /v1/chat/completions` endpoint for chat.
 
 ### Authenticated backends
 
@@ -134,8 +135,11 @@ API keys stay on the computer and are attached to both model discovery and chat 
 | LM Studio | `LLMBEAM_LM_STUDIO_API_KEY` | — |
 | llama.cpp | `LLMBEAM_LLAMA_CPP_API_KEY` | `LLAMA_ARG_API_KEY` |
 | OMLX | `LLMBEAM_OMLX_API_KEY` | `OMLX_API_KEY`, then OMLX `settings.json` |
+| Auto-discovered custom port, for example `18080` | `LLMBEAM_LOCAL_18080_API_KEY` | — |
 | First `--backend` | `LLMBEAM_CUSTOM_1_API_KEY` | — |
 | Second `--backend` | `LLMBEAM_CUSTOM_2_API_KEY` | — |
+
+When a scanned non-default port returns `401`, LLMBeam retries with configured framework credentials, including OMLX's settings file. A successful match keeps using that credential source for model refreshes and chat. Framework credentials are not sent when the initial endpoint response is anything other than `401`.
 
 The same `LLMBEAM_CUSTOM_N_API_KEY` pattern works for vLLM, LocalAI, or any other authenticated OpenAI-compatible server, where `N` follows the order of `--backend` flags. LLMBeam never sends these keys to the phone or includes them in logs and error responses.
 

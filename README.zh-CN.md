@@ -101,7 +101,7 @@ llmbeam --remote
 
 更多实用特性：
 
-- **自动发现：** Ollama、LM Studio、llama.cpp，以及 macOS 上的 OMLX。
+- **自动发现：** 扫描全部本机端口，自动找到 Ollama、LM Studio、llama.cpp、OMLX 和其他 OpenAI 兼容服务。
 - **多个后端同时使用：** 在同一个模型选择器中切换 `ollama/llama3.2`、`lm-studio/qwen2.5` 等模型。
 - **兼容更多服务：** 重复传入 `--backend URL` 即可添加任意 OpenAI 兼容接口。
 - **手机优先的 UI：** 支持安全区域、流式 Markdown、模型切换和停止生成。
@@ -112,13 +112,14 @@ llmbeam --remote
 
 | 后端 | 自动探测地址 | 接入方式 |
 | --- | --- | --- |
-| [Ollama](https://ollama.com/) | `http://127.0.0.1:11434/v1` | 自动 |
-| [LM Studio](https://lmstudio.ai/) | `http://127.0.0.1:1234/v1` | 自动 |
-| [llama.cpp](https://github.com/ggml-org/llama.cpp) | `http://127.0.0.1:8080/v1` | 自动 |
-| OMLX | `http://127.0.0.1:8000/v1` | macOS 自动接入 |
-| 任意 OpenAI 兼容服务 | `llmbeam --backend http://host:port/v1` | 手动添加 |
+| [Ollama](https://ollama.com/) | 本机默认或自定义端口 | 自动 |
+| [LM Studio](https://lmstudio.ai/) | 本机默认或自定义端口 | 自动 |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) | 本机默认或自定义端口 | 自动 |
+| OMLX | 本机默认或自定义端口 | 自动 |
+| 任意 OpenAI 兼容服务 | 本机任意端口上的标准 `/v1` 路径 | 自动 |
+| 远程服务或非标准 API 路径 | `llmbeam --backend http://host:port/path` | 手动添加 |
 
-兼容后端只需实现 `GET /models` 和支持流式响应的 `POST /chat/completions`。
+LLMBeam 启动时会扫描 `127.0.0.1:1-65535`，只保留能够返回合法 OpenAI `GET /v1/models` 响应的服务；它不会扫描局域网设备或公网。非默认端口会获得 `local-18080` 这样的稳定标识，使用框架凭据匹配成功时则显示为 `omlx-18080`。用于聊天的兼容后端还需实现支持流式响应的 `POST /v1/chat/completions`。
 
 ### 需要 API key 的后端
 
@@ -130,8 +131,11 @@ API key 始终留在电脑上，LLMBeam 会为模型发现和聊天请求统一�
 | LM Studio | `LLMBEAM_LM_STUDIO_API_KEY` | — |
 | llama.cpp | `LLMBEAM_LLAMA_CPP_API_KEY` | `LLAMA_ARG_API_KEY` |
 | OMLX | `LLMBEAM_OMLX_API_KEY` | `OMLX_API_KEY`，然后读取 OMLX `settings.json` |
+| 自动发现的自定义端口，例如 `18080` | `LLMBEAM_LOCAL_18080_API_KEY` | — |
 | 第一个 `--backend` | `LLMBEAM_CUSTOM_1_API_KEY` | — |
 | 第二个 `--backend` | `LLMBEAM_CUSTOM_2_API_KEY` | — |
+
+扫描到的非默认端口返回 `401` 时，LLMBeam 会尝试当前已配置的框架凭据，包括从 OMLX 设置文件自动读取的密钥。匹配成功后，模型刷新和聊天请求会持续使用同一凭据来源。初始响应不是 `401` 时，不会发送任何框架密钥。
 
 vLLM、LocalAI 和其他需要认证的 OpenAI 兼容服务都使用相同的 `LLMBEAM_CUSTOM_N_API_KEY` 规则，其中 `N` 与 `--backend` 参数的顺序一致。LLMBeam 不会把这些密钥发送给手机，也不会把它们写入日志或错误响应。
 

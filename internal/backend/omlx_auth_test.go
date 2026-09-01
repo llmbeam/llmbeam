@@ -138,6 +138,8 @@ func TestDiscoverConfiguresBackendAuth(t *testing.T) {
 			t.Setenv(test.envName, "discover-key")
 
 			original := wellKnown
+			originalScan := scanLoopback
+			scanLoopback = func(map[int]struct{}, time.Duration) []ProbeResult { return nil }
 			extras := []string(nil)
 			if test.custom {
 				wellKnown = nil
@@ -145,7 +147,10 @@ func TestDiscoverConfiguresBackendAuth(t *testing.T) {
 			} else {
 				wellKnown = []Candidate{{ID: test.backendID, BaseURL: server.URL, Loopback: true}}
 			}
-			t.Cleanup(func() { wellKnown = original })
+			t.Cleanup(func() {
+				wellKnown = original
+				scanLoopback = originalScan
+			})
 
 			results, _, err := Discover(extras, 500*time.Millisecond)
 			if err != nil {
