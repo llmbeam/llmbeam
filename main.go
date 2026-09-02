@@ -32,7 +32,7 @@ import (
 
 const (
 	AppName             = "llmbeam"
-	defaultRemoteWebURL = "https://shao-hua-li.github.io/llmbeam/"
+	defaultRemoteWebURL = "https://llmbeam.github.io/llmbeam/"
 )
 
 var version = "dev"

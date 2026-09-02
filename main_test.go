@@ -95,10 +95,10 @@ func TestPrintPairingUsesCompactQRCode(t *testing.T) {
 func TestRemotePairURLKeepsSecretsInFragment(t *testing.T) {
 	access := pairingAccess{
 		localURL:     "http://192.168.1.42:8442",
-		remoteWebURL: "https://shao-hua-li.github.io/llmbeam/",
+		remoteWebURL: "https://llmbeam.github.io/llmbeam/",
 		tailcatToken: "tcToken",
 	}
-	if got := access.pairURL("2345ABCD"); got != "https://shao-hua-li.github.io/llmbeam/#/connect/tcToken/2345ABCD" {
+	if got := access.pairURL("2345ABCD"); got != "https://llmbeam.github.io/llmbeam/#/connect/tcToken/2345ABCD" {
 		t.Fatalf("remote pair URL = %q", got)
 	}
 }
@@ -133,7 +133,7 @@ func TestChooseQRLayoutAdaptsToTerminalSize(t *testing.T) {
 }
 
 func TestRemoteQRCodeDoesNotOverflowShortTerminal(t *testing.T) {
-	payload := "https://shao-hua-li.github.io/llmbeam/#/connect/" + strings.Repeat("t", 225) + "/2345ABCD"
+	payload := "https://llmbeam.github.io/llmbeam/#/connect/" + strings.Repeat("t", 225) + "/2345ABCD"
 	layout := chooseQRLayout(payload, 80, 24)
 	if !layout.show || layout.quietZone != 1 {
 		t.Fatalf("remote QR layout = %+v, want scrollable QR", layout)
