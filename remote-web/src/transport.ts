@@ -1,4 +1,3 @@
-const DERP_MAP_URL = './derpmap.json'
 const TUNNEL_PORT = 443
 const MAX_FRAME_SIZE = 12 << 20
 const ADDRESS_KEY = 'llmbeam_remote_address'
@@ -171,7 +170,7 @@ class RemoteTransport {
     if (!this.connection) {
       this.connection = await globalThis.tailcatDial({
         addr: this.address,
-        derpMapURL: DERP_MAP_URL,
+        derpMapURL: new URL('./derpmap.json', location.href).toString(),
         port: TUNNEL_PORT,
         verbose: false,
       })
