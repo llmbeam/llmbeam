@@ -24,6 +24,18 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Initialize Homebrew tap
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if gh api repos/llmbeam/homebrew-tap/contents/README.md >/dev/null 2>&1; then
+            exit 0
+          fi
+          content="$(printf '%s\n' '# llmbeam Homebrew Tap' '' 'Homebrew casks for llmbeam.' | base64 | tr -d '\n')"
+          gh api --method PUT repos/llmbeam/homebrew-tap/contents/README.md \
+            -f message='Initialize Homebrew tap' \
+            -f content="$content"
       - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser

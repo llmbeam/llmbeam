@@ -8,6 +8,8 @@ LLMBeam uses GoReleaser to publish macOS, Linux, and Windows binaries and to upd
 2. Create a fine-grained GitHub personal access token with `Contents: Read and write` access to that repository.
 3. Add the token to this repository as an Actions secret named `HOMEBREW_TAP_GITHUB_TOKEN`.
 
+The release workflow initializes the tap automatically if it is empty.
+
 GoReleaser will create and update `Casks/llmbeam.rb` in the tap repository. Users can then install with:
 
 ```sh
