@@ -145,7 +145,7 @@ Other useful details:
 | [Ollama](https://ollama.com/) | Default or custom localhost port | Automatic |
 | [LM Studio](https://lmstudio.ai/) | Default or custom localhost port | Automatic |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | Default or custom localhost port | Automatic |
-| OMLX | Default or custom localhost port | Automatic |
+| [OMLX](https://github.com/jundot/omlx) | Default or custom localhost port | Automatic |
 | [vLLM](https://github.com/vllm-project/vllm) | Usually `8000`, or any localhost port | Automatic |
 | [SGLang](https://github.com/sgl-project/sglang) | Usually `30000`, or any localhost port | Automatic |
 | [Jan](https://github.com/janhq/jan) | Usually `1337`, or any localhost port | Automatic |
