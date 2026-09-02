@@ -1,9 +1,6 @@
 package remote
 
 import (
-	"bytes"
-	"compress/gzip"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"io"
@@ -12,41 +9,6 @@ import (
 	"strings"
 	"testing"
 )
-
-func TestCompressToken(t *testing.T) {
-	raw := []byte(strings.Repeat("region-host derp.example.com ", 20))
-	original := "tc" + base64.RawURLEncoding.EncodeToString(raw)
-	compressed := compressToken(original)
-	if compressed == original {
-		t.Fatal("token was not compressed")
-	}
-	if compressed[:2] != "tg" {
-		t.Fatalf("compressed token prefix = %q", compressed[:2])
-	}
-	encoded, err := base64.RawURLEncoding.DecodeString(compressed[2:])
-	if err != nil {
-		t.Fatal(err)
-	}
-	reader, err := gzip.NewReader(bytes.NewReader(encoded))
-	if err != nil {
-		t.Fatal(err)
-	}
-	decoded, err := io.ReadAll(reader)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(decoded) != string(raw) {
-		t.Fatalf("decoded token payload = %q", decoded)
-	}
-}
-
-func TestCompactToken(t *testing.T) {
-	original := "tco2FwWCDjqx9oQSXTC8J8DHVuD3u-8__YOMLyG3cf9wLyEDukLGFrWCBT1upMovkJpmWuZN8hhVMuC8JvDCkVuznCoQDE7y5qDWFygaFhToGjYWhudGMzMDRhLmlwbi5kZXZhNG0yMDguMTExLjM5LjM4YTZzMjYwNzpmNzQwOjA6M2Y6OjcyMA"
-	compact := compactToken(original)
-	if compact == original || len(compact) >= len(original) {
-		t.Fatalf("compact token length = %d, original length = %d", len(compact), len(original))
-	}
-}
 
 func TestServeConnectionBridgesStreamingHTTP(t *testing.T) {
 	serverConnection, clientConnection := net.Pipe()

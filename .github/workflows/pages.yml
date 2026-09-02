@@ -63,9 +63,6 @@ jobs:
         run: |
           cp tailcat-pages/main.wasm.gz dist/remote-web/main.wasm.gz
           cp tailcat-pages/wasm_exec.js dist/remote-web/wasm_exec.js
-          curl --fail --silent --show-error --location \
-            https://tailcat.dev/derpmap.json \
-            --output dist/remote-web/derpmap.json
 
       - uses: actions/configure-pages@v5
 

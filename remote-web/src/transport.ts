@@ -1,3 +1,4 @@
+const DERP_MAP_URL = 'https://tailcat.dev/derpmap.json'
 const TUNNEL_PORT = 443
 const MAX_FRAME_SIZE = 12 << 20
 const ADDRESS_KEY = 'llmbeam_remote_address'
@@ -42,16 +43,16 @@ declare global {
 }
 
 export async function installRemoteTransport(): Promise<typeof fetch> {
-  const address = await resolveAddress()
+  const address = resolveAddress()
   await loadTailcat()
   const transport = new RemoteTransport(address)
   return transport.fetch.bind(transport) as typeof fetch
 }
 
-async function resolveAddress(): Promise<string> {
+function resolveAddress(): string {
   const match = location.hash.match(/^#\/connect\/([^/?#]+)\/([^/?#]+)\/?$/)
   if (match) {
-    const address = await decodeAddress(decodeFragmentPart(match[1]))
+    const address = decodeFragmentPart(match[1])
     const code = decodeFragmentPart(match[2])
     const previous = readSession(ADDRESS_KEY)
     if (previous !== address) removeSession(COOKIES_KEY)
@@ -67,31 +68,6 @@ async function resolveAddress(): Promise<string> {
 
 function decodeFragmentPart(value: string) {
   try { return decodeURIComponent(value) } catch { return value }
-}
-
-async function decodeAddress(value: string): Promise<string> {
-  if (!value.startsWith('tg')) return value
-  if (typeof globalThis.DecompressionStream !== 'function') {
-    throw new Error('This browser is too old for the secure remote connection.')
-  }
-  const compressed = decodeBase64URL(value.slice(2))
-  const stream = new Blob([compressed.buffer as ArrayBuffer]).stream()
-    .pipeThrough(new DecompressionStream('gzip'))
-  const raw = new Uint8Array(await new Response(stream).arrayBuffer())
-  return `tc${encodeBase64URL(raw)}`
-}
-
-function decodeBase64URL(value: string): Uint8Array {
-  const padded = value.replaceAll('-', '+').replaceAll('_', '/')
-    .padEnd(Math.ceil(value.length / 4) * 4, '=')
-  const binary = atob(padded)
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0))
-}
-
-function encodeBase64URL(value: Uint8Array): string {
-  let binary = ''
-  for (const byte of value) binary += String.fromCharCode(byte)
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
 }
 
 async function loadTailcat() {
@@ -170,7 +146,7 @@ class RemoteTransport {
     if (!this.connection) {
       this.connection = await globalThis.tailcatDial({
         addr: this.address,
-        derpMapURL: new URL('./derpmap.json', location.href).toString(),
+        derpMapURL: DERP_MAP_URL,
         port: TUNNEL_PORT,
         verbose: false,
       })

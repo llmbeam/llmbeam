@@ -284,11 +284,6 @@ func (output *terminalOutput) printPairing(update pair.CodeUpdate, access pairin
 
 const pairingOutputRows = 7
 
-const (
-	fallbackTerminalColumns = 80
-	fallbackTerminalRows    = 24
-)
-
 type qrLayout struct {
 	show      bool
 	quietZone int
@@ -297,8 +292,7 @@ type qrLayout struct {
 func chooseQRLayout(payload string, columns, rows int) qrLayout {
 	standard := qrLayout{show: true, quietZone: 2}
 	if columns <= 0 || rows <= 0 {
-		columns = fallbackTerminalColumns
-		rows = fallbackTerminalRows
+		return standard
 	}
 	code, err := qr.Encode(payload, qr.L)
 	if err != nil {
