@@ -81,6 +81,40 @@ func TestChatProxyStreamsSSE(t *testing.T) {
 	}
 }
 
+func TestChatProxyAdaptsNonStreamingBackend(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var payload map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload["stream"] != false {
+			t.Errorf("stream = %v, want false", payload["stream"])
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"chat-1","model":"m1","choices":[{"message":{"role":"assistant","content":"hello"},"finish_reason":"stop"}]}`))
+	}))
+	t.Cleanup(upstream.Close)
+
+	item := &backend.Backend{ID: "gpt4all", BaseURL: upstream.URL + "/v1", NonStreaming: true}
+	server, pairs := newProxyTestServer(t, []*backend.Backend{item})
+	cookie, _ := pairUp(t, server, pairs, "test")
+	request, _ := http.NewRequest(http.MethodPost, server.URL+"/api/chat",
+		strings.NewReader(`{"model":"gpt4all/m1","messages":[]}`))
+	request.AddCookie(cookie)
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, _ := io.ReadAll(response.Body)
+	if response.StatusCode != http.StatusOK || response.Header.Get("Content-Type") != "text/event-stream" {
+		t.Fatalf("status=%d content-type=%q body=%s", response.StatusCode, response.Header.Get("Content-Type"), body)
+	}
+	if !strings.Contains(string(body), `"content":"hello"`) || !strings.Contains(string(body), "[DONE]") {
+		t.Fatalf("adapted SSE = %q", body)
+	}
+}
+
 func TestChatSendsAndRefreshesBackendAuth(t *testing.T) {
 	t.Setenv("LLMBEAM_CUSTOM_1_API_KEY", "old-key")
 	var requests atomic.Int32

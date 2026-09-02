@@ -23,10 +23,12 @@ const (
 
 // Candidate describes an endpoint that should be probed.
 type Candidate struct {
-	ID       string
-	BaseURL  string
-	Loopback bool
-	authID   string
+	ID           string
+	BaseURL      string
+	Loopback     bool
+	authID       string
+	authIDs      []string
+	NonStreaming bool
 }
 
 var wellKnown = defaultCandidates(runtime.GOOS)
@@ -36,19 +38,91 @@ var scanLoopback = func(excluded map[int]struct{}, timeout time.Duration) []Prob
 }
 
 func defaultCandidates(goos string) []Candidate {
-	candidates := []Candidate{
-		{ID: "ollama", BaseURL: "http://127.0.0.1:11434/v1", Loopback: true},
-		{ID: "lm-studio", BaseURL: "http://127.0.0.1:1234/v1", Loopback: true},
-		{ID: "llama.cpp", BaseURL: "http://127.0.0.1:8080/v1", Loopback: true},
+	definitions := make([]backendSpec, 0, len(supportedBackendSpecs))
+	for _, spec := range supportedBackendSpecs {
+		if spec.darwinOnly && goos != "darwin" {
+			continue
+		}
+		definitions = append(definitions, spec)
 	}
-	if goos == "darwin" {
-		candidates = append(candidates, Candidate{
-			ID:       "omlx",
-			BaseURL:  "http://127.0.0.1:8000/v1",
-			Loopback: true,
-		})
+	return mergeCandidates(definitions)
+}
+
+type backendSpec struct {
+	id           string
+	port         int
+	nonStreaming bool
+	darwinOnly   bool
+	nativeEnv    []string
+}
+
+var supportedBackendSpecs = []backendSpec{
+	{id: "ollama", port: 11434},
+	{id: "lm-studio", port: 1234},
+	{id: "llama.cpp", port: 8080, nativeEnv: []string{"LLAMA_ARG_API_KEY"}},
+	{id: "jan", port: 1337},
+	{id: "litellm", port: 4000, nativeEnv: []string{"LITELLM_MASTER_KEY", "LITELLM_API_KEY"}},
+	{id: "koboldcpp", port: 5001},
+	{id: "gpt4all", port: 4891, nonStreaming: true},
+	{id: "xinference", port: 9997, nativeEnv: []string{"XINFERENCE_API_KEY"}},
+	{id: "lmdeploy", port: 23333, nativeEnv: []string{"LMDEPLOY_API_KEY"}},
+	{id: "sglang", port: 30000, nativeEnv: []string{"SGLANG_API_KEY"}},
+	{id: "localai", port: 8080, nativeEnv: []string{"LOCALAI_API_KEY"}},
+	{id: "llamafile", port: 8080},
+	{id: "tgi", port: 8080},
+	{id: "omlx", port: 8000, darwinOnly: true, nativeEnv: []string{"OMLX_API_KEY"}},
+	{id: "mlx-lm", port: 8080, darwinOnly: true},
+	{id: "vllm", port: 8000, nativeEnv: []string{"VLLM_API_KEY"}},
+	{id: "mlc-llm", port: 8000},
+	{id: "tensorrt-llm", port: 8000},
+}
+
+func mergeCandidates(definitions []backendSpec) []Candidate {
+	byURL := make(map[string]int, len(definitions))
+	candidates := make([]Candidate, 0, len(definitions))
+	for _, definition := range definitions {
+		baseURL := fmt.Sprintf("http://127.0.0.1:%d/v1", definition.port)
+		candidate := Candidate{
+			ID:           definition.id,
+			BaseURL:      baseURL,
+			Loopback:     true,
+			authIDs:      []string{definition.id},
+			NonStreaming: definition.nonStreaming,
+		}
+		if index, exists := byURL[baseURL]; exists {
+			candidates[index].authIDs = append(candidates[index].authIDs, definition.id)
+			continue
+		}
+		byURL[baseURL] = len(candidates)
+		candidates = append(candidates, candidate)
 	}
 	return candidates
+}
+
+func knownBackendIDs() []string {
+	ids := make([]string, 0, len(supportedBackendSpecs))
+	for _, spec := range supportedBackendSpecs {
+		ids = append(ids, spec.id)
+	}
+	return ids
+}
+
+func backendSpecForID(id string) (backendSpec, bool) {
+	for _, spec := range supportedBackendSpecs {
+		if spec.id == id {
+			return spec, true
+		}
+	}
+	return backendSpec{}, false
+}
+
+func containsString(values []string, wanted string) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 // ProbeResult captures the startup status of one candidate.
@@ -80,18 +154,17 @@ func Discover(extras []string, timeout time.Duration) ([]ProbeResult, []*Backend
 	results := make([]ProbeResult, len(candidates), len(candidates)+len(scanned))
 	var wait sync.WaitGroup
 	for index, candidate := range candidates {
-		item := backendForCandidate(candidate)
-		backends[index] = item
 		wait.Add(1)
-		go func() {
+		go func(index int, candidate Candidate) {
 			defer wait.Done()
-			models, err := item.Models(timeout)
+			matched, models := probeCandidate(candidate, timeout)
+			backends[index] = backendForCandidate(matched)
 			results[index] = ProbeResult{
-				Candidate:  candidate,
-				Up:         err == nil,
+				Candidate:  matched,
+				Up:         models != nil,
 				ModelCount: len(models),
 			}
-		}()
+		}(index, candidate)
 	}
 	wait.Wait()
 	for _, result := range scanned {
@@ -159,7 +232,7 @@ func scanLoopbackRange(first, last, workers int, excluded map[int]struct{}, time
 }
 
 func configuredScanAuthIDs() []string {
-	ids := []string{"ollama", "lm-studio", "llama.cpp", "omlx"}
+	ids := knownBackendIDs()
 	configured := make([]string, 0, len(ids))
 	for _, id := range ids {
 		key, _ := backendCredentials(id)
@@ -189,12 +262,48 @@ func probeScannedPort(port int, authIDs []string, timeout time.Duration) (ProbeR
 	for _, authID := range authIDs {
 		candidate.ID = fmt.Sprintf("%s-%d", authID, port)
 		candidate.authID = authID
+		candidate.NonStreaming = authID == "gpt4all"
 		models, err = backendForCandidate(candidate).Models(timeout)
 		if err == nil {
 			return probeResult(candidate, models), true
 		}
 	}
 	return ProbeResult{}, false
+}
+
+func probeCandidate(candidate Candidate, timeout time.Duration) (Candidate, []string) {
+	primaryID := candidate.ID
+	ids := candidate.authIDs
+	if len(ids) == 0 {
+		ids = []string{candidate.ID}
+	}
+	orderedIDs := append([]string{candidate.ID}, ids...)
+	seen := make(map[string]struct{}, len(orderedIDs))
+	for _, authID := range orderedIDs {
+		if authID == "" {
+			continue
+		}
+		if _, exists := seen[authID]; exists {
+			continue
+		}
+		seen[authID] = struct{}{}
+		candidate.authID = authID
+		candidate.NonStreaming = authID == "gpt4all"
+		models, err := backendForCandidate(candidate).Models(timeout)
+		if err == nil {
+			if authID != primaryID {
+				candidate.ID = authID
+			}
+			return candidate, models
+		}
+		var statusError *modelsStatusError
+		if !errors.As(err, &statusError) || statusError.status != http.StatusUnauthorized {
+			return candidate, nil
+		}
+	}
+	candidate.authID = ""
+	candidate.NonStreaming = primaryID == "gpt4all"
+	return candidate, nil
 }
 
 func probeResult(candidate Candidate, models []string) ProbeResult {
@@ -210,7 +319,9 @@ func backendForCandidate(candidate Candidate) *Backend {
 	if authID == "" {
 		authID = candidate.ID
 	}
-	return newBackendWithCredentials(candidate.ID, candidate.BaseURL, authID)
+	item := newBackendWithCredentials(candidate.ID, candidate.BaseURL, authID)
+	item.NonStreaming = candidate.NonStreaming
+	return item
 }
 
 func openLoopbackPorts(first, last, workers int, excluded map[int]struct{}, timeout time.Duration) []int {

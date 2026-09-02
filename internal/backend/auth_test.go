@@ -18,6 +18,14 @@ func TestBackendAPIKeyEnvironmentNames(t *testing.T) {
 		{backendID: "lm-studio", want: []string{"LLMBEAM_LM_STUDIO_API_KEY"}},
 		{backendID: "llama.cpp", want: []string{"LLMBEAM_LLAMA_CPP_API_KEY", "LLAMA_ARG_API_KEY"}},
 		{backendID: "omlx", want: []string{"LLMBEAM_OMLX_API_KEY", "OMLX_API_KEY"}},
+		{backendID: "vllm", want: []string{"LLMBEAM_VLLM_API_KEY", "VLLM_API_KEY"}},
+		{backendID: "sglang", want: []string{"LLMBEAM_SGLANG_API_KEY", "SGLANG_API_KEY"}},
+		{backendID: "localai", want: []string{"LLMBEAM_LOCALAI_API_KEY", "LOCALAI_API_KEY"}},
+		{backendID: "litellm", want: []string{"LLMBEAM_LITELLM_API_KEY", "LITELLM_MASTER_KEY", "LITELLM_API_KEY"}},
+		{backendID: "xinference", want: []string{"LLMBEAM_XINFERENCE_API_KEY", "XINFERENCE_API_KEY"}},
+		{backendID: "lmdeploy", want: []string{"LLMBEAM_LMDEPLOY_API_KEY", "LMDEPLOY_API_KEY"}},
+		{backendID: "mlx-lm", want: []string{"LLMBEAM_MLX_LM_API_KEY"}},
+		{backendID: "gpt4all", want: []string{"LLMBEAM_GPT4ALL_API_KEY"}},
 		{backendID: "custom-1", want: []string{"LLMBEAM_CUSTOM_1_API_KEY"}},
 	}
 	for _, test := range tests {

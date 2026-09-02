@@ -36,11 +36,8 @@ func loadBackendAPIKey(
 func backendAPIKeyEnvironment(backendID string) []string {
 	llmbeamName := "LLMBEAM_" + strings.NewReplacer("-", "_", ".", "_").Replace(strings.ToUpper(backendID)) + "_API_KEY"
 	names := []string{llmbeamName}
-	switch backendID {
-	case "llama.cpp":
-		names = append(names, "LLAMA_ARG_API_KEY")
-	case "omlx":
-		names = append(names, "OMLX_API_KEY")
+	if spec, ok := backendSpecForID(backendID); ok {
+		names = append(names, spec.nativeEnv...)
 	}
 	return names
 }

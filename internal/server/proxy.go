@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	maxChatRequestBytes = 10 << 20
-	maxUpstreamError    = 4 << 10
-	responseHeaderWait  = 30 * time.Second
+	maxChatRequestBytes  = 10 << 20
+	maxChatResponseBytes = 20 << 20
+	maxUpstreamError     = 4 << 10
+	responseHeaderWait   = 30 * time.Second
 )
 
 func newUpstreamClient() *http.Client {
@@ -48,7 +49,11 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload["model"], _ = json.Marshal(upstreamModel)
-	payload["stream"] = json.RawMessage("true")
+	if selected.NonStreaming {
+		payload["stream"] = json.RawMessage("false")
+	} else {
+		payload["stream"] = json.RawMessage("true")
+	}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, "bad_request")
@@ -66,7 +71,11 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 		upstreamRequest.Header.Set("Content-Type", "application/json")
-		upstreamRequest.Header.Set("Accept", "text/event-stream")
+		if selected.NonStreaming {
+			upstreamRequest.Header.Set("Accept", "application/json")
+		} else {
+			upstreamRequest.Header.Set("Accept", "text/event-stream")
+		}
 		upstreamRequest.Header.Set("Accept-Encoding", "identity")
 		selected.ApplyAuth(upstreamRequest)
 		return s.upstream.Do(upstreamRequest)
@@ -98,6 +107,18 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	mediaType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type"))
+	if selected.NonStreaming {
+		if err != nil || mediaType != "application/json" {
+			logger.Warn("non-streaming backend returned unexpected response",
+				"backend", selected.ID,
+				"content_type", response.Header.Get("Content-Type"),
+			)
+			jsonError(w, http.StatusBadGateway, "backend_error")
+			return
+		}
+		streamNonStreamingResponse(w, response.Body)
+		return
+	}
 	if err != nil || mediaType != "text/event-stream" {
 		logger.Warn("upstream returned non-SSE response",
 			"backend", selected.ID,
@@ -122,6 +143,63 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	if copyErr != nil && r.Context().Err() == nil {
 		logger.Warn("upstream stream interrupted", "backend", selected.ID, "error", copyErr)
 	}
+}
+
+func streamNonStreamingResponse(w http.ResponseWriter, body io.Reader) {
+	responseBody, err := io.ReadAll(io.LimitReader(body, maxChatResponseBytes+1))
+	if err != nil || len(responseBody) > maxChatResponseBytes {
+		jsonError(w, http.StatusBadGateway, "backend_error")
+		return
+	}
+	var response struct {
+		ID      string `json:"id"`
+		Model   string `json:"model"`
+		Choices []struct {
+			Message struct {
+				Role    string `json:"role"`
+				Content string `json:"content"`
+			} `json:"message"`
+			FinishReason any `json:"finish_reason"`
+		} `json:"choices"`
+	}
+	decoder := json.NewDecoder(bytes.NewReader(responseBody))
+	if err := decoder.Decode(&response); err != nil || len(response.Choices) == 0 {
+		jsonError(w, http.StatusBadGateway, "backend_error")
+		return
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		jsonError(w, http.StatusBadGateway, "backend_error")
+		return
+	}
+	choice := response.Choices[0]
+	chunk := map[string]any{
+		"id":     response.ID,
+		"object": "chat.completion.chunk",
+		"model":  response.Model,
+		"choices": []any{map[string]any{
+			"index": 0,
+			"delta": map[string]string{
+				"role":    choice.Message.Role,
+				"content": choice.Message.Content,
+			},
+			"finish_reason": choice.FinishReason,
+		}},
+	}
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("X-Accel-Buffering", "no")
+	w.WriteHeader(http.StatusOK)
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		return
+	}
+	if data, err := json.Marshal(chunk); err == nil {
+		_, _ = w.Write(append(append([]byte("data: "), data...), '\n', '\n'))
+		flusher.Flush()
+	}
+	_, _ = w.Write([]byte("data: [DONE]\n\n"))
+	flusher.Flush()
 }
 
 type flushWriter struct {

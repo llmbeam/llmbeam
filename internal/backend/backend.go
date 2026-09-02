@@ -19,8 +19,9 @@ const (
 
 // Backend is an OpenAI-compatible API base.
 type Backend struct {
-	ID      string
-	BaseURL string
+	ID           string
+	BaseURL      string
+	NonStreaming bool
 
 	mu           sync.RWMutex
 	apiKey       string

@@ -142,10 +142,24 @@ llmbeam --remote
 | [LM Studio](https://lmstudio.ai/) | 本机默认或自定义端口 | 自动 |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | 本机默认或自定义端口 | 自动 |
 | OMLX | 本机默认或自定义端口 | 自动 |
+| [vLLM](https://github.com/vllm-project/vllm) | 通常为 `8000`，也支持本机任意端口 | 自动 |
+| [SGLang](https://github.com/sgl-project/sglang) | 通常为 `30000`，也支持本机任意端口 | 自动 |
+| [Jan](https://github.com/janhq/jan) | 通常为 `1337`，也支持本机任意端口 | 自动 |
+| [LocalAI](https://github.com/mudler/LocalAI) | 通常为 `8080`，也支持本机任意端口 | 自动 |
+| [MLX-LM](https://github.com/ml-explore/mlx-lm) | Apple Silicon 通常为 `8080` | 自动 |
+| [LMDeploy](https://github.com/InternLM/lmdeploy) | 通常为 `23333`，也支持本机任意端口 | 自动 |
+| [Xinference](https://github.com/xorbitsai/inference) | 通常为 `9997`，也支持本机任意端口 | 自动 |
+| [LiteLLM](https://github.com/BerriAI/LiteLLM) | 通常为 `4000`，也支持本机任意端口 | 自动 |
+| [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) | 通常为 `8000`，也支持本机任意端口 | 自动 |
+| [MLC LLM](https://github.com/mlc-ai/mlc-llm) | OpenAI 兼容服务，端口可配置 | 自动 |
+| [llamafile](https://github.com/Mozilla-Ocho/llamafile) | 通常为 `8080`，也支持本机任意端口 | 自动 |
+| [KoboldCpp](https://github.com/LostRuins/KoboldCpp) | 通常为 `5001`，也支持本机任意端口 | 自动 |
+| [GPT4All](https://github.com/nomic-ai/gpt4all) | 通常为 `4891`，也支持本机任意端口 | 自动 |
+| [Text Generation Inference](https://github.com/huggingface/text-generation-inference) | 通常为 `8080`，也支持本机任意端口 | 自动 |
 | 任意 OpenAI 兼容服务 | 本机任意端口上的标准 `/v1` 路径 | 自动 |
 | 远程服务或非标准 API 路径 | `llmbeam --backend http://host:port/path` | 手动添加 |
 
-LLMBeam 启动时会扫描 `127.0.0.1:1-65535`，只保留能够返回合法 OpenAI `GET /v1/models` 响应的服务；它不会扫描局域网设备或公网。非默认端口会获得 `local-18080` 这样的稳定标识，使用框架凭据匹配成功时则显示为 `omlx-18080`。用于聊天的兼容后端还需实现支持流式响应的 `POST /v1/chat/completions`。
+LLMBeam 启动时会扫描 `127.0.0.1:1-65535`，只保留能够返回合法 OpenAI `GET /v1/models` 响应的服务；它不会扫描局域网设备或公网。非默认端口会获得 `local-18080` 这样的稳定标识，使用框架凭据匹配成功时则显示为 `vllm-18080`。兼容后端应实现 `POST /v1/chat/completions`；流式响应会直接转发，GPT4All 的非流式 JSON 响应则会转换为浏览器使用的 SSE。
 
 ### 需要 API key 的后端
 
@@ -157,6 +171,14 @@ API key 始终留在电脑上，LLMBeam 会为模型发现和聊天请求统一�
 | LM Studio | `LLMBEAM_LM_STUDIO_API_KEY` | — |
 | llama.cpp | `LLMBEAM_LLAMA_CPP_API_KEY` | `LLAMA_ARG_API_KEY` |
 | OMLX | `LLMBEAM_OMLX_API_KEY` | `OMLX_API_KEY`，然后读取 OMLX `settings.json` |
+| vLLM | `LLMBEAM_VLLM_API_KEY` | `VLLM_API_KEY` |
+| SGLang | `LLMBEAM_SGLANG_API_KEY` | `SGLANG_API_KEY` |
+| LocalAI | `LLMBEAM_LOCALAI_API_KEY` | `LOCALAI_API_KEY` |
+| LiteLLM | `LLMBEAM_LITELLM_API_KEY` | `LITELLM_MASTER_KEY`，然后 `LITELLM_API_KEY` |
+| Xinference | `LLMBEAM_XINFERENCE_API_KEY` | `XINFERENCE_API_KEY` |
+| LMDeploy | `LLMBEAM_LMDEPLOY_API_KEY` | `LMDEPLOY_API_KEY` |
+| MLX-LM | `LLMBEAM_MLX_LM_API_KEY` | — |
+| Jan、TensorRT-LLM、MLC LLM、llamafile、KoboldCpp、GPT4All 或 TGI | `LLMBEAM_<BACKEND>_API_KEY` | — |
 | 自动发现的自定义端口，例如 `18080` | `LLMBEAM_LOCAL_18080_API_KEY` | — |
 | 第一个 `--backend` | `LLMBEAM_CUSTOM_1_API_KEY` | — |
 | 第二个 `--backend` | `LLMBEAM_CUSTOM_2_API_KEY` | — |

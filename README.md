@@ -146,10 +146,24 @@ Other useful details:
 | [LM Studio](https://lmstudio.ai/) | Default or custom localhost port | Automatic |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | Default or custom localhost port | Automatic |
 | OMLX | Default or custom localhost port | Automatic |
+| [vLLM](https://github.com/vllm-project/vllm) | Usually `8000`, or any localhost port | Automatic |
+| [SGLang](https://github.com/sgl-project/sglang) | Usually `30000`, or any localhost port | Automatic |
+| [Jan](https://github.com/janhq/jan) | Usually `1337`, or any localhost port | Automatic |
+| [LocalAI](https://github.com/mudler/LocalAI) | Usually `8080`, or any localhost port | Automatic |
+| [MLX-LM](https://github.com/ml-explore/mlx-lm) | Usually `8080` on Apple Silicon | Automatic |
+| [LMDeploy](https://github.com/InternLM/lmdeploy) | Usually `23333`, or any localhost port | Automatic |
+| [Xinference](https://github.com/xorbitsai/inference) | Usually `9997`, or any localhost port | Automatic |
+| [LiteLLM](https://github.com/BerriAI/LiteLLM) | Usually `4000`, or any localhost port | Automatic |
+| [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) | Usually `8000`, or any localhost port | Automatic |
+| [MLC LLM](https://github.com/mlc-ai/mlc-llm) | Configurable OpenAI-compatible server | Automatic |
+| [llamafile](https://github.com/Mozilla-Ocho/llamafile) | Usually `8080`, or any localhost port | Automatic |
+| [KoboldCpp](https://github.com/LostRuins/KoboldCpp) | Usually `5001`, or any localhost port | Automatic |
+| [GPT4All](https://github.com/nomic-ai/gpt4all) | Usually `4891`, or any localhost port | Automatic |
+| [Text Generation Inference](https://github.com/huggingface/text-generation-inference) | Usually `8080`, or any localhost port | Automatic |
 | Any OpenAI-compatible API | Standard `/v1` on any localhost port | Automatic |
 | Remote or non-standard API path | `llmbeam --backend http://host:port/path` | Manual |
 
-At startup, LLMBeam scans `127.0.0.1:1-65535` and keeps only services that return a valid OpenAI `GET /v1/models` response. It never scans your LAN or public network. Non-default endpoints receive a stable ID such as `local-18080`; authenticated matches use the framework name, such as `omlx-18080`. A compatible backend also needs a streaming `POST /v1/chat/completions` endpoint for chat.
+At startup, LLMBeam scans `127.0.0.1:1-65535` and keeps only services that return a valid OpenAI `GET /v1/models` response. It never scans your LAN or public network. Non-default endpoints receive a stable ID such as `local-18080`; authenticated matches use the framework name, such as `vllm-18080`. A compatible backend should expose `POST /v1/chat/completions`; streaming responses are forwarded directly, while GPT4All's non-streaming JSON response is converted to SSE for the browser.
 
 ### Authenticated backends
 
@@ -161,6 +175,14 @@ API keys stay on the computer and are attached to both model discovery and chat 
 | LM Studio | `LLMBEAM_LM_STUDIO_API_KEY` | — |
 | llama.cpp | `LLMBEAM_LLAMA_CPP_API_KEY` | `LLAMA_ARG_API_KEY` |
 | OMLX | `LLMBEAM_OMLX_API_KEY` | `OMLX_API_KEY`, then OMLX `settings.json` |
+| vLLM | `LLMBEAM_VLLM_API_KEY` | `VLLM_API_KEY` |
+| SGLang | `LLMBEAM_SGLANG_API_KEY` | `SGLANG_API_KEY` |
+| LocalAI | `LLMBEAM_LOCALAI_API_KEY` | `LOCALAI_API_KEY` |
+| LiteLLM | `LLMBEAM_LITELLM_API_KEY` | `LITELLM_MASTER_KEY`, then `LITELLM_API_KEY` |
+| Xinference | `LLMBEAM_XINFERENCE_API_KEY` | `XINFERENCE_API_KEY` |
+| LMDeploy | `LLMBEAM_LMDEPLOY_API_KEY` | `LMDEPLOY_API_KEY` |
+| MLX-LM | `LLMBEAM_MLX_LM_API_KEY` | — |
+| Jan, TensorRT-LLM, MLC LLM, llamafile, KoboldCpp, GPT4All, or TGI | `LLMBEAM_<BACKEND>_API_KEY` | — |
 | Auto-discovered custom port, for example `18080` | `LLMBEAM_LOCAL_18080_API_KEY` | — |
 | First `--backend` | `LLMBEAM_CUSTOM_1_API_KEY` | — |
 | Second `--backend` | `LLMBEAM_CUSTOM_2_API_KEY` | — |

@@ -226,6 +226,71 @@ func TestDefaultCandidatesIncludeOMLXOnlyOnMacOS(t *testing.T) {
 	}
 }
 
+func TestDefaultCandidatesCoverSupportedBackends(t *testing.T) {
+	want := []string{
+		"ollama", "lm-studio", "llama.cpp", "jan", "litellm", "koboldcpp",
+		"gpt4all", "xinference", "lmdeploy", "sglang", "localai", "llamafile",
+		"tgi", "vllm", "mlc-llm", "tensorrt-llm",
+	}
+	for _, goos := range []string{"linux", "windows", "darwin"} {
+		candidates := defaultCandidates(goos)
+		ids := make(map[string]bool)
+		for _, candidate := range candidates {
+			ids[candidate.ID] = true
+			for _, authID := range candidate.authIDs {
+				ids[authID] = true
+			}
+		}
+		for _, id := range want {
+			if !ids[id] {
+				t.Errorf("%s candidates do not include %s", goos, id)
+			}
+		}
+	}
+}
+
+func TestDefaultCandidatesMergePortAliases(t *testing.T) {
+	candidates := defaultCandidates("linux")
+	var port8080 Candidate
+	for _, candidate := range candidates {
+		if strings.HasSuffix(candidate.BaseURL, ":8080/v1") {
+			port8080 = candidate
+			break
+		}
+	}
+	if port8080.ID != "llama.cpp" {
+		t.Fatalf("8080 primary candidate = %+v", port8080)
+	}
+	for _, id := range []string{"llama.cpp", "localai", "llamafile", "tgi"} {
+		if !containsString(port8080.authIDs, id) {
+			t.Fatalf("8080 candidate aliases = %v, missing %s", port8080.authIDs, id)
+		}
+	}
+}
+
+func TestProbeCandidateUsesMatchingAliasCredential(t *testing.T) {
+	t.Setenv("LLMBEAM_OMLX_API_KEY", "")
+	t.Setenv("LLMBEAM_VLLM_API_KEY", "vllm-key")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer vllm-key" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`{"data":[{"id":"model"}]}`))
+	}))
+	t.Cleanup(server.Close)
+
+	candidate := Candidate{
+		ID:      "omlx",
+		BaseURL: server.URL,
+		authIDs: []string{"omlx", "vllm"},
+	}
+	matched, models := probeCandidate(candidate, 500*time.Millisecond)
+	if matched.ID != "vllm" || matched.authID != "vllm" || len(models) != 1 {
+		t.Fatalf("matched candidate = %+v, models = %v", matched, models)
+	}
+}
+
 func findCandidate(candidates []Candidate, id string) (Candidate, bool) {
 	for _, candidate := range candidates {
 		if candidate.ID == id {
