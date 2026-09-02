@@ -4,14 +4,14 @@ LLMBeam uses GoReleaser to publish macOS, Linux, and Windows binaries and to upd
 
 ## One-time Homebrew setup
 
-1. Create a public repository named `shao-hua-li/homebrew-tap`.
+1. Create a public repository named `llmbeam/homebrew-tap`.
 2. Create a fine-grained GitHub personal access token with `Contents: Read and write` access to that repository.
 3. Add the token to this repository as an Actions secret named `HOMEBREW_TAP_GITHUB_TOKEN`.
 
 GoReleaser will create and update `Casks/llmbeam.rb` in the tap repository. Users can then install with:
 
 ```sh
-brew install shao-hua-li/tap/llmbeam
+brew install llmbeam/tap/llmbeam
 ```
 
 ## Publish a release

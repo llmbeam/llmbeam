@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/llmbeam/llmbeam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/llmbeam/llmbeam/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://go.dev/"><img alt="Go 1.27+" src="https://img.shields.io/badge/Go-1.27%2B-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-7c3aed?style=flat-square"></a>
-  <a href="https://github.com/shao-hua-li/llmbeam/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/shao-hua-li/llmbeam?style=social"></a>
+  <a href="https://github.com/llmbeam/llmbeam/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/llmbeam/llmbeam?style=social"></a>
 </p>
 
 <p align="center">
@@ -49,7 +49,7 @@ $ llmbeam
 macOS 用户可以通过 Homebrew 安装：
 
 ```sh
-brew install shao-hua-li/tap/llmbeam
+brew install llmbeam/tap/llmbeam
 ```
 
 后续使用 `brew upgrade llmbeam` 即可升级。
@@ -65,12 +65,12 @@ xattr -d com.apple.quarantine "$(which llmbeam)"
 Linux 用户可以使用一条命令安装经过校验的最新版本：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/shao-hua-li/llmbeam/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/llmbeam/llmbeam/main/install.sh | sh
 ```
 
 脚本会自动识别 amd64 或 arm64，使用 `checksums.txt` 校验下载的压缩包，并默认安装到 `~/.local/bin`，不需要 `sudo`。设置 `LLMBEAM_INSTALL_DIR` 可以指定其他安装目录。
 
-也可以从 [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest) 下载 macOS、Linux 或 Windows 的预编译压缩包。每个版本都会提供 amd64、arm64 构建以及 `checksums.txt` 校验文件。
+也可以从 [Releases](https://github.com/llmbeam/llmbeam/releases/latest) 下载 macOS、Linux 或 Windows 的预编译压缩包。每个版本都会提供 amd64、arm64 构建以及 `checksums.txt` 校验文件。
 
 或者使用 Go 1.27+ 安装：
 
@@ -81,7 +81,7 @@ go install github.com/shao-hua-li/llmbeam@latest
 也可以从源码构建。源码构建需要 Go 1.27+ 和 Node.js 22；运行预编译版本不需要它们。
 
 ```sh
-git clone https://github.com/shao-hua-li/llmbeam.git
+git clone https://github.com/llmbeam/llmbeam.git
 cd llmbeam
 make build
 ```
@@ -275,7 +275,7 @@ llmbeam --port 9000 --code-ttl 2m
 - [ ] Sidecar 模式和可嵌入的 Go 库。
 - [ ] 可选的视觉模型与图片透传。
 
-有希望影响路线图的使用场景？欢迎[提交 Issue](https://github.com/shao-hua-li/llmbeam/issues)。
+有希望影响路线图的使用场景？欢迎[提交 Issue](https://github.com/llmbeam/llmbeam/issues)。
 
 ## 参与贡献
 
@@ -290,7 +290,7 @@ make web
 
 ## 让更多人发现 LLMBeam
 
-如果 LLMBeam 帮你省掉了本地大模型使用流程中一个令人烦恼的步骤，欢迎给项目一个 [Star](https://github.com/shao-hua-li/llmbeam)。你的支持会帮助更多本地 AI 用户发现它。
+如果 LLMBeam 帮你省掉了本地大模型使用流程中一个令人烦恼的步骤，欢迎给项目一个 [Star](https://github.com/llmbeam/llmbeam)。你的支持会帮助更多本地 AI 用户发现它。
 
 ## 开源协议
 

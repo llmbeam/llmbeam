@@ -2,7 +2,7 @@
 
 set -eu
 
-repo="${LLMBEAM_REPOSITORY:-shao-hua-li/llmbeam}"
+repo="${LLMBEAM_REPOSITORY:-llmbeam/llmbeam}"
 install_dir="${LLMBEAM_INSTALL_DIR:-$HOME/.local/bin}"
 api_url="https://api.github.com/repos/${repo}/releases/latest"
 

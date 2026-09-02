@@ -43,16 +43,16 @@ homebrew_casks:
     ids:
       - llmbeam
     repository:
-      owner: shao-hua-li
+      owner: llmbeam
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Casks
-    homepage: https://github.com/shao-hua-li/llmbeam
+    homepage: https://github.com/llmbeam/llmbeam
     description: Beam local LLMs to your phone with one command and one scan
     binaries:
       - llmbeam
     url:
-      verified: github.com/shao-hua-li/llmbeam/releases/download
+      verified: github.com/llmbeam/llmbeam/releases/download
 
 changelog:
   sort: asc
@@ -63,6 +63,6 @@ changelog:
 
 release:
   github:
-    owner: shao-hua-li
+    owner: llmbeam
     name: llmbeam
   draft: false

@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/shao-hua-li/llmbeam/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/llmbeam/llmbeam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/llmbeam/llmbeam/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://go.dev/"><img alt="Go 1.27+" src="https://img.shields.io/badge/Go-1.27%2B-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-7c3aed?style=flat-square"></a>
-  <a href="https://github.com/shao-hua-li/llmbeam/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/shao-hua-li/llmbeam?style=social"></a>
+  <a href="https://github.com/llmbeam/llmbeam/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/llmbeam/llmbeam?style=social"></a>
 </p>
 
 <p align="center">
@@ -51,7 +51,7 @@ $ llmbeam
 On macOS, install with Homebrew:
 
 ```sh
-brew install shao-hua-li/tap/llmbeam
+brew install llmbeam/tap/llmbeam
 ```
 
 Upgrade later with `brew upgrade llmbeam`.
@@ -67,12 +67,12 @@ This is a temporary workaround while the macOS binary is not yet Apple-notarized
 On Linux, install the latest verified binary with one command:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/shao-hua-li/llmbeam/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/llmbeam/llmbeam/main/install.sh | sh
 ```
 
 The installer detects amd64 or arm64, verifies the downloaded archive against `checksums.txt`, and installs to `~/.local/bin` without requiring `sudo`. Set `LLMBEAM_INSTALL_DIR` to choose another location.
 
-Prebuilt archives for macOS, Linux, and Windows are also available from [Releases](https://github.com/shao-hua-li/llmbeam/releases/latest). Each release includes amd64 and arm64 builds plus a `checksums.txt` file.
+Prebuilt archives for macOS, Linux, and Windows are also available from [Releases](https://github.com/llmbeam/llmbeam/releases/latest). Each release includes amd64 and arm64 builds plus a `checksums.txt` file.
 
 Alternatively, install with Go 1.27+:
 
@@ -85,7 +85,7 @@ To build from source:
 Source builds require Go 1.27+ and Node.js 22; neither is needed to run a prebuilt binary.
 
 ```sh
-git clone https://github.com/shao-hua-li/llmbeam.git
+git clone https://github.com/llmbeam/llmbeam.git
 cd llmbeam
 make build
 ```
@@ -279,7 +279,7 @@ Yes, with the experimental `llmbeam --remote` mode. Do not expose the local HTTP
 - [ ] Sidecar and Go library modes for embedding LLMBeam elsewhere.
 - [ ] Optional vision/image passthrough.
 
-Have a use case that should shape the roadmap? [Open an issue](https://github.com/shao-hua-li/llmbeam/issues).
+Have a use case that should shape the roadmap? [Open an issue](https://github.com/llmbeam/llmbeam/issues).
 
 ## Contributing
 
@@ -294,7 +294,7 @@ For bug reports, include your OS, backend, model server version, browser, and th
 
 ## Help more people find LLMBeam
 
-If LLMBeam removes one annoying step from your local-LLM setup, consider [starring the repository](https://github.com/shao-hua-li/llmbeam). It helps other local-AI builders discover the project.
+If LLMBeam removes one annoying step from your local-LLM setup, consider [starring the repository](https://github.com/llmbeam/llmbeam). It helps other local-AI builders discover the project.
 
 ## License
 
