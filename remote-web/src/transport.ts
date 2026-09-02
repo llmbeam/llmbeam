@@ -1,4 +1,4 @@
-const DERP_MAP_URL = 'https://tailcat.dev/derpmap.json'
+const DERP_MAP_URL = './derpmap.json'
 const TUNNEL_PORT = 443
 const MAX_FRAME_SIZE = 12 << 20
 const ADDRESS_KEY = 'llmbeam_remote_address'
