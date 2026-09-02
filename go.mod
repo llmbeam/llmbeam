@@ -1,4 +1,4 @@
-module github.com/shao-hua-li/llmbeam
+module github.com/llmbeam/llmbeam
 
 go 1.27.0
 

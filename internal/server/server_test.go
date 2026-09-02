@@ -10,8 +10,8 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/shao-hua-li/llmbeam/internal/backend"
-	"github.com/shao-hua-li/llmbeam/internal/pair"
+	"github.com/llmbeam/llmbeam/internal/backend"
+	"github.com/llmbeam/llmbeam/internal/pair"
 )
 
 func newTestServer(t *testing.T, backends []*backend.Backend, static fstest.MapFS) (*httptest.Server, *pair.Manager) {

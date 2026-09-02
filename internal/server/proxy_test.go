@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shao-hua-li/llmbeam/internal/backend"
-	"github.com/shao-hua-li/llmbeam/internal/pair"
+	"github.com/llmbeam/llmbeam/internal/backend"
+	"github.com/llmbeam/llmbeam/internal/pair"
 )
 
 func fakeStreamingUpstream(t *testing.T) (*httptest.Server, <-chan map[string]any) {

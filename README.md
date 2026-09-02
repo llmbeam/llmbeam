@@ -77,7 +77,7 @@ Prebuilt archives for macOS, Linux, and Windows are also available from [Release
 Alternatively, install with Go 1.27+:
 
 ```sh
-go install github.com/shao-hua-li/llmbeam@latest
+go install github.com/llmbeam/llmbeam@latest
 ```
 
 To build from source:

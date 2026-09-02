@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shao-hua-li/llmbeam/internal/pair"
+	"github.com/llmbeam/llmbeam/internal/pair"
 	"rsc.io/qr"
 )
 

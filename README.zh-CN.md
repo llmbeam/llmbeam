@@ -75,7 +75,7 @@ curl -fsSL https://raw.githubusercontent.com/llmbeam/llmbeam/main/install.sh | s
 或者使用 Go 1.27+ 安装：
 
 ```sh
-go install github.com/shao-hua-li/llmbeam@latest
+go install github.com/llmbeam/llmbeam@latest
 ```
 
 也可以从源码构建。源码构建需要 Go 1.27+ 和 Node.js 22；运行预编译版本不需要它们。

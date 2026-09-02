@@ -22,12 +22,12 @@ import (
 	"golang.org/x/term"
 	"rsc.io/qr"
 
-	"github.com/shao-hua-li/llmbeam/internal/backend"
-	"github.com/shao-hua-li/llmbeam/internal/netutil"
-	"github.com/shao-hua-li/llmbeam/internal/pair"
-	"github.com/shao-hua-li/llmbeam/internal/remote"
-	"github.com/shao-hua-li/llmbeam/internal/server"
-	"github.com/shao-hua-li/llmbeam/internal/ui"
+	"github.com/llmbeam/llmbeam/internal/backend"
+	"github.com/llmbeam/llmbeam/internal/netutil"
+	"github.com/llmbeam/llmbeam/internal/pair"
+	"github.com/llmbeam/llmbeam/internal/remote"
+	"github.com/llmbeam/llmbeam/internal/server"
+	"github.com/llmbeam/llmbeam/internal/ui"
 )
 
 const (
