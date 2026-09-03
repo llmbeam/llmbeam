@@ -48,6 +48,12 @@ func TestParseConfigRejectsInvalidValues(t *testing.T) {
 	}
 }
 
+func TestConnectHostHintProvidesManualMDNSFallback(t *testing.T) {
+	if got := connectHostHint(); got != "llmbeam connect --host <ip>:8442" {
+		t.Fatalf("connect host hint = %q", got)
+	}
+}
+
 func TestRunVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	if status := run([]string{"--version"}, &stdout, &stderr); status != 0 {

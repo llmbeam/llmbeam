@@ -154,7 +154,7 @@ internal/server/connector_test.go
 - [x] PC A 在 HTTP server 成功监听后发布 `_llmbeam._tcp`。
 - [x] 正确处理服务名冲突、多个 LLMBeam 主机和停止广播。
 - [x] PC B 实现发现、过滤、排序和用户选择。
-- [ ] mDNS 失败时支持 `--host` 手动连接。
+- [x] mDNS 失败时支持 `--host` 手动连接。
 - [x] 不向 mDNS 广播秘密信息。
 
 建议抽象：

@@ -263,12 +263,12 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		cancel()
 		if err != nil {
 			fmt.Fprintln(stderr, "error: LAN discovery failed:", err)
-			fmt.Fprintln(stderr, "hint: retry with --host <ip>:8442")
+			fmt.Fprintln(stderr, "hint:", connectHostHint())
 			return 1
 		}
 		if len(peers) == 0 {
 			fmt.Fprintln(stderr, "No LLMBeam hosts found on the local network.")
-			fmt.Fprintln(stderr, "hint: retry with --host <ip>:8442")
+			fmt.Fprintln(stderr, "hint:", connectHostHint())
 			return 1
 		}
 		fmt.Fprintln(stdout, "Found LLMBeam hosts:")
@@ -363,6 +363,13 @@ func readConnectLine(stdin io.Reader, stdout io.Writer, prompt string) (string, 
 		return line, nil
 	}
 	return line, err
+}
+
+// connectHostHint returns the actionable manual fallback shown when mDNS is
+// unavailable. Keeping it centralized ensures all discovery failures provide
+// the same documented command.
+func connectHostHint() string {
+	return "llmbeam connect --host <ip>:8442"
 }
 
 func parseConfig(args []string, stderr io.Writer) (config, error) {
