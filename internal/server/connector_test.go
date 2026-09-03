@@ -27,6 +27,27 @@ func TestConnectorInfoDoesNotExposeCode(t *testing.T) {
 	}
 }
 
+func TestConnectorSessionsRedactsCredentials(t *testing.T) {
+	server, _, connectors := newConnectorTestServer(t, nil)
+	paired := connectorTokenFromManager(t, connectors)
+	request := connectorRequest(t, http.MethodGet, server.URL+"/api/connector/sessions", paired, "")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("status=%d", response.StatusCode)
+	}
+	body, _ := io.ReadAll(response.Body)
+	if strings.Contains(string(body), paired) || strings.Contains(string(body), "test-public-key") {
+		t.Fatalf("session response leaked credentials: %s", body)
+	}
+	if !strings.Contains(string(body), "test-client") {
+		t.Fatalf("session response omitted client metadata: %s", body)
+	}
+}
+
 func TestConnectorPairRefreshAndRevoke(t *testing.T) {
 	server, _, connectors := newConnectorTestServer(t, nil)
 	requestBody := `{"code":"` + connectors.Code() + `","client_id":"client-a","client_public_key":"key-a"}`

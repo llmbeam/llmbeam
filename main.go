@@ -329,6 +329,9 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "error:", err)
 		return 1
 	}
+	if serverFingerprint == "" {
+		serverFingerprint = session.Fingerprint
+	}
 	if store, storeErr := connect.NewSessionStore(""); storeErr == nil {
 		if storeErr = store.Save(connect.StoredSession{Host: baseURL, Fingerprint: serverFingerprint, Session: session}); storeErr != nil {
 			fmt.Fprintln(stderr, "warning: could not save connector session:", storeErr)

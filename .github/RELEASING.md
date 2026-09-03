@@ -36,4 +36,10 @@ The release workflow publishes:
 
 The Linux installer at `install.sh` reads the latest GitHub Release and verifies its archive with `checksums.txt`. Keep the archive naming and checksum output stable when changing the GoReleaser configuration.
 
+## LAN connector releases
+
+Connector support is included in the normal binary release. Each build contains the `llmbeam connect` command, which discovers `_llmbeam._tcp` hosts and starts a loopback OpenAI-compatible endpoint. The model host also opens a temporary TLS connector on its HTTP port plus one; the mDNS advertisement carries its public certificate fingerprint so clients can pin it.
+
+Before tagging a connector release, verify both the normal browser flow and a local connector flow on at least one macOS or Linux machine. Do not publish pairing codes, connector tokens, or local API keys in release notes or CI logs.
+
 Use a new version tag to retry a failed release after fixing its cause. Do not move a tag that users may already have fetched.

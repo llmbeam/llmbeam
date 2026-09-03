@@ -104,6 +104,35 @@ llmbeam
 
 让手机和电脑连接同一个 Wi-Fi，然后用 iPhone 或 Android 手机扫描终端里的二维码。浏览器会自动完成配对，列出已发现的模型，并实时流式显示回答。
 
+### 将局域网模型变成本地 OpenAI 接口
+
+如果另一台电脑上的 Codex、Cursor 或 Continue 需要使用 PC A 上的模型，可以使用原生 connector，无需在 PC A 上安装额外服务：
+
+```sh
+# PC A：运行模型和 LLMBeam
+llmbeam
+
+# PC B：自动发现 PC A，并提示输入 6 位 Connect Code
+llmbeam connect
+```
+
+LLMBeam 会在局域网发布 mDNS `_llmbeam._tcp` 服务。PC B 随后会启动类似 `http://127.0.0.1:8333/v1` 的仅回环接口，并打印临时本地 API key。将这个 Base URL 和 API key 填入你的 Agent。两端支持时，connector 模型流量会使用临时 TLS 端点和证书指纹锁定；手机二维码流程仍使用普通 HTTP 端口。
+
+使用 OpenAI SDK 时，将 `base_url` 设置为输出的 `/v1` 地址，并将 `api_key` 设置为输出的本地密钥。在 Codex、Cursor 或 Continue 中选择 OpenAI-compatible provider，填入相同的 Base URL 和 API key 即可。
+
+如果防火墙或 Wi-Fi 隔离导致 mDNS 不可用，可以手动指定主机：
+
+```sh
+llmbeam connect --host 192.168.50.242:8442 --listen 127.0.0.1:8333
+```
+
+手动使用安全端点时，传入广播的证书指纹：
+
+```sh
+llmbeam connect --host https://192.168.50.242:8443 \
+  --fingerprint <sha256-fingerprint>
+```
+
 ### 从任意网络使用（实验性）
 
 ```sh
@@ -211,8 +240,10 @@ LLMBeam 面向的是**可信的家庭或办公室局域网**，不是公网。
 - 来自其他 Origin 的 POST 请求会被拒绝，并启用了严格的浏览器安全响应头。
 - 自动发现的模型服务始终使用回环地址；非回环的 `--backend` 必须由用户显式指定，并会显示警告。
 - 所有后端 API key 都只保存在 LLMBeam 网关进程中，不写入日志，也不会发送给手机。
+- 原生 connector 使用独立的本地 API key，仅在 PC A 请求时注入远端 connector token。
+- 如果主机发布了 TLS connector，模型流量会使用临时证书和 SHA-256 指纹锁定；Unix 凭据文件权限为 `0600`。
 
-**请注意：** 本地模式在局域网中使用明文 HTTP，传输内容没有加密，请勿把 HTTP 端口直接转发到公网，也不要在不可信网络中使用。实验性的 `--remote` 模式使用 Tailcat 加密传输与 Tailscale DERP 中继。
+**请注意：** 手机浏览器配对端口仍然在局域网中使用明文 HTTP，请勿将其转发到公网，也不要在不可信网络中使用。原生 connector 在广播 TLS 端点时会使用独立的指纹锁定 TLS 端口。实验性的 `--remote` 模式使用 Tailcat 加密传输与 Tailscale DERP 中继。
 
 实现细节可以查看 [`internal/pair`](internal/pair) 和 [`internal/server`](internal/server)。
 
@@ -221,11 +252,19 @@ LLMBeam 面向的是**可信的家庭或办公室局域网**，不是公网。
 ```text
 llmbeam [options]
 
+llmbeam connect [options]
+
   --port 8442             监听的局域网端口
   --backend URL           额外的 OpenAI 兼容 API，可重复指定
   --no-qr                 只显示地址和配对码，不显示二维码
   --code-ttl 10m          配对码有效时间
   --version               显示版本并退出
+
+connect 选项：
+  --host HOST             host:port 或 HTTPS URL，跳过 mDNS 自动发现
+  --fingerprint HEX       HTTPS 主机的 SHA-256 指纹
+  --listen 127.0.0.1:0   本地回环接口（0 表示自动选择端口）
+  --timeout 3s            mDNS 发现超时时间
 ```
 
 示例：

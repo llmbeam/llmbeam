@@ -108,6 +108,35 @@ llmbeam
 
 Scan the QR code with an iPhone or Android phone on the same Wi-Fi. The browser pairs automatically, shows every discovered model, and streams replies token by token.
 
+### Turn a LAN model into a local OpenAI endpoint
+
+Use the native connector when another computer (for example, Codex, Cursor, or Continue) should use the model without installing anything on the model host:
+
+```sh
+# PC A: runs the model and LLMBeam
+llmbeam
+
+# PC B: discovers PC A, then asks for the six-character Connect Code
+llmbeam connect
+```
+
+LLMBeam publishes an mDNS `_llmbeam._tcp` service on the LAN. PC B starts a loopback-only endpoint such as `http://127.0.0.1:8333/v1` and prints a short-lived local API key. Configure your client with that Base URL and key. Connector traffic uses the pinned ephemeral TLS endpoint when both sides support it; the browser QR flow remains available over the normal HTTP port.
+
+For OpenAI SDKs, set `base_url` to the printed `/v1` URL and `api_key` to the printed local key. In Codex, Cursor, or Continue, choose an OpenAI-compatible provider and enter the same Base URL and key.
+
+If mDNS is blocked by a firewall or Wi-Fi isolation, select the host manually:
+
+```sh
+llmbeam connect --host 192.168.50.242:8442 --listen 127.0.0.1:8333
+```
+
+For a manually supplied secure endpoint, pass the advertised certificate fingerprint:
+
+```sh
+llmbeam connect --host https://192.168.50.242:8443 \
+  --fingerprint <sha256-fingerprint>
+```
+
 ### Use it from anywhere (experimental)
 
 ```sh
@@ -215,8 +244,10 @@ LLMBeam is designed for a **trusted home or office LAN**, not the public interne
 - Foreign-origin POST requests are rejected, and restrictive browser security headers are enabled.
 - Auto-discovered model servers are always loopback addresses. Non-loopback `--backend` values are explicit operator choices and produce a warning.
 - Backend API keys remain in the gateway process and are never exposed to paired browsers.
+- Native connectors use a separate loopback-only API key and inject the remote connector token only on the PC A request.
+- When available, connector traffic uses a temporary TLS certificate with SHA-256 fingerprint pinning. Connector credentials are stored in the per-user config directory with Unix mode `0600`.
 
-**Important:** local mode serves plain HTTP on your LAN. Traffic is not encrypted in transit, so do not port-forward its HTTP port or use it on an untrusted network. Experimental `--remote` traffic uses Tailcat's encrypted transport and Tailscale DERP relays.
+**Important:** the browser pairing port still serves plain HTTP on your LAN. Do not port-forward it or use it on an untrusted network. Native connector model traffic uses the separate pinned TLS port when advertised. Experimental `--remote` traffic uses Tailcat's encrypted transport and Tailscale DERP relays.
 
 For implementation details, see [`internal/pair`](internal/pair) and [`internal/server`](internal/server).
 
@@ -225,11 +256,19 @@ For implementation details, see [`internal/pair`](internal/pair) and [`internal/
 ```text
 llmbeam [options]
 
+llmbeam connect [options]
+
   --port 8442             LAN port to listen on
   --backend URL           extra OpenAI-compatible base URL; repeatable
   --no-qr                 print the address and code without a QR
   --code-ttl 10m          pairing-code lifetime
   --version               print the version and exit
+
+connect options:
+  --host HOST             host:port or HTTPS URL; skip mDNS discovery
+  --fingerprint HEX       expected SHA-256 fingerprint for HTTPS hosts
+  --listen 127.0.0.1:0   local loopback endpoint (auto-selects a port)
+  --timeout 3s            mDNS discovery timeout
 ```
 
 Examples:

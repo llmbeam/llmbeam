@@ -229,22 +229,22 @@ internal/connect/proxy_test.go
 
 #### 单元测试
 
-- [ ] 6 位 code 生成、大小写和分隔符规范化。
-- [ ] code 过期、重复兑换和并发兑换。
-- [ ] IP/code 双重限流。
-- [ ] connector token 生成、刷新和撤销。
-- [ ] mDNS metadata 不包含秘密。
-- [ ] OpenAI 模型 ID 映射。
+- [x] 6 位 code 生成、大小写和分隔符规范化。
+- [x] code 过期、重复兑换和并发兑换。
+- [x] IP/code 双重限流。
+- [x] connector token 生成、刷新和撤销。
+- [x] mDNS metadata 不包含秘密。
+- [x] OpenAI 模型 ID 映射。
 
 #### 集成测试
 
-- [ ] fake PC A gateway + fake PC B connector。
-- [ ] `/v1/models` 转发。
-- [ ] `/v1/chat/completions` 转发。
-- [ ] SSE 流式输出。
-- [ ] 上游 401、超时和断线。
+- [x] fake PC A gateway + fake PC B connector。
+- [x] `/v1/models` 转发。
+- [x] `/v1/chat/completions` 转发。
+- [x] SSE 流式输出。
+- [x] 上游 401、超时和断线。
 - [ ] PC A 重启后的失效行为。
-- [ ] 本地 API key 校验。
+- [x] 本地 API key 校验。
 - [ ] 端口冲突和自动端口选择。
 
 #### 跨平台验证
@@ -259,12 +259,12 @@ internal/connect/proxy_test.go
 
 #### 文档和发布
 
-- [ ] 更新 `README.md`。
-- [ ] 更新 `README.zh-CN.md`。
-- [ ] 增加 LAN connector 使用示例。
-- [ ] 说明 Codex、Cursor、Continue 的 Base URL 配置。
-- [ ] 说明局域网安全边界和防火墙要求。
-- [ ] 更新 CI、GoReleaser 和安装脚本。
+- [x] 更新 `README.md`。
+- [x] 更新 `README.zh-CN.md`。
+- [x] 增加 LAN connector 使用示例。
+- [x] 说明 Codex、Cursor、Continue 的 Base URL 配置。
+- [x] 说明局域网安全边界和防火墙要求。
+- [x] 更新 CI、GoReleaser 和安装脚本。
 - [ ] 发布包含 connector 的 minor version。
 
 ## 推荐开发顺序
