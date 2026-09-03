@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -23,6 +24,7 @@ import (
 	"rsc.io/qr"
 
 	"github.com/llmbeam/llmbeam/internal/backend"
+	"github.com/llmbeam/llmbeam/internal/connect"
 	"github.com/llmbeam/llmbeam/internal/lan"
 	"github.com/llmbeam/llmbeam/internal/netutil"
 	"github.com/llmbeam/llmbeam/internal/pair"
@@ -64,6 +66,9 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "connect" {
+		return runConnect(args[1:], os.Stdin, stdout, stderr)
+	}
 	configuration, err := parseConfig(args, stderr)
 	if errors.Is(err, flag.ErrHelp) {
 		return 0
@@ -173,6 +178,113 @@ func run(args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	}
+}
+
+func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("llmbeam connect", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	var host, listen string
+	var timeout time.Duration
+	flags.StringVar(&host, "host", "", "LLMBeam host (host:port or URL); skip mDNS discovery")
+	flags.StringVar(&listen, "listen", "127.0.0.1:0", "local loopback listen address")
+	flags.DurationVar(&timeout, "timeout", 3*time.Second, "mDNS discovery timeout")
+	if err := flags.Parse(args); err != nil {
+		return 2
+	}
+	if flags.NArg() != 0 {
+		fmt.Fprintln(stderr, "error: unexpected arguments:", flags.Args())
+		return 2
+	}
+	if timeout <= 0 {
+		fmt.Fprintln(stderr, "error: timeout must be positive")
+		return 2
+	}
+
+	baseURL := strings.TrimSpace(host)
+	if baseURL == "" {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		peers, err := lan.NewDiscoverer().Discover(ctx)
+		cancel()
+		if err != nil {
+			fmt.Fprintln(stderr, "error: LAN discovery failed:", err)
+			fmt.Fprintln(stderr, "hint: retry with --host <ip>:8442")
+			return 1
+		}
+		if len(peers) == 0 {
+			fmt.Fprintln(stderr, "No LLMBeam hosts found on the local network.")
+			fmt.Fprintln(stderr, "hint: retry with --host <ip>:8442")
+			return 1
+		}
+		fmt.Fprintln(stdout, "Found LLMBeam hosts:")
+		for index, peer := range peers {
+			address := ""
+			if len(peer.Addresses) > 0 {
+				address = net.JoinHostPort(peer.Addresses[0].String(), strconv.Itoa(peer.Port))
+			}
+			fmt.Fprintf(stdout, "  %d. %-24s %s\n", index+1, peer.Name, address)
+		}
+		selection, err := readConnectLine(stdin, stdout, "Select host: ")
+		if err != nil {
+			fmt.Fprintln(stderr, "error: cannot read host selection:", err)
+			return 1
+		}
+		index, err := strconv.Atoi(selection)
+		if err != nil || index < 1 || index > len(peers) {
+			fmt.Fprintln(stderr, "error: invalid host selection")
+			return 1
+		}
+		peer := peers[index-1]
+		if len(peer.Addresses) == 0 {
+			fmt.Fprintln(stderr, "error: selected host has no usable LAN address")
+			return 1
+		}
+		baseURL = "http://" + net.JoinHostPort(peer.Addresses[0].String(), strconv.Itoa(peer.Port))
+	}
+	baseURL, err := connect.NormalizeHost(baseURL)
+	if err != nil {
+		fmt.Fprintln(stderr, "error:", err)
+		return 2
+	}
+	code, err := readConnectLine(stdin, stdout, "Enter 6-character Connect Code: ")
+	if err != nil {
+		fmt.Fprintln(stderr, "error: cannot read Connect Code:", err)
+		return 1
+	}
+	client, err := connect.New(baseURL, nil)
+	if err != nil {
+		fmt.Fprintln(stderr, "error:", err)
+		return 2
+	}
+	pairCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	session, err := client.Pair(pairCtx, code)
+	cancel()
+	if err != nil {
+		fmt.Fprintln(stderr, "error:", err)
+		return 1
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	listener, err := client.Listen(ctx, listen)
+	if err != nil {
+		fmt.Fprintln(stderr, "error:", err)
+		return 1
+	}
+	defer listener.Close()
+	fmt.Fprintln(stdout, "\nConnected.")
+	fmt.Fprintf(stdout, "Local OpenAI endpoint:\n  http://%s/v1\n", listener.Addr().String())
+	fmt.Fprintf(stdout, "Connector session expires: %s\n", session.Expires.Local().Format(time.RFC3339))
+	<-ctx.Done()
+	return 0
+}
+
+func readConnectLine(stdin io.Reader, stdout io.Writer, prompt string) (string, error) {
+	fmt.Fprint(stdout, prompt)
+	line, err := bufio.NewReader(stdin).ReadString('\n')
+	line = strings.TrimSpace(line)
+	if line != "" && errors.Is(err, io.EOF) {
+		return line, nil
+	}
+	return line, err
 }
 
 func parseConfig(args []string, stderr io.Writer) (config, error) {

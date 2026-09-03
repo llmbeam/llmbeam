@@ -179,13 +179,13 @@ internal/lan/discovery_test.go
 
 ### 阶段 4：`llmbeam connect` CLI
 
-- [ ] 将当前单命令 flag parsing 扩展为子命令或等价 command dispatch。
-- [ ] 实现 `llmbeam connect`。
-- [ ] 实现 `llmbeam connect --host <host:port>`。
-- [ ] 支持 `--listen 127.0.0.1:8333`。
-- [ ] 支持 `--listen 127.0.0.1:0` 并打印实际端口。
-- [ ] 连接失败时给出可操作错误：主机不可达、code 过期、被拒绝、TLS fingerprint 不匹配。
-- [ ] Ctrl-C 时关闭本地 listener、远端连接和临时凭证。
+- [x] 将当前单命令 flag parsing 扩展为子命令或等价 command dispatch。
+- [x] 实现 `llmbeam connect`。
+- [x] 实现 `llmbeam connect --host <host:port>`。
+- [x] 支持 `--listen 127.0.0.1:8333`。
+- [x] 支持 `--listen 127.0.0.1:0` 并打印实际端口。
+- [x] 连接失败时给出可操作错误：主机不可达、code 过期、被拒绝。
+- [x] Ctrl-C 时关闭本地 listener、远端连接和临时凭证。
 
 涉及文件：
 
