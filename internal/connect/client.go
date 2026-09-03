@@ -27,9 +27,10 @@ type Session struct {
 
 // Client talks to a paired LLMBeam host.
 type Client struct {
-	baseURL string
-	http    *http.Client
-	session Session
+	baseURL     string
+	http        *http.Client
+	session     Session
+	localAPIKey string
 }
 
 // New creates a client for a host URL.
@@ -42,7 +43,11 @@ func New(baseURL string, httpClient *http.Client) (*Client, error) {
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: defaultHTTPTimeout}
 	}
-	return &Client{baseURL: baseURL, http: httpClient}, nil
+	localAPIKey, err := randomToken("lb_", 32)
+	if err != nil {
+		return nil, err
+	}
+	return &Client{baseURL: baseURL, http: httpClient, localAPIKey: localAPIKey}, nil
 }
 
 // Pair exchanges a one-time Connect Code for a connector session.
@@ -126,11 +131,18 @@ func (c *Client) Refresh(ctx context.Context) (Session, error) {
 // Token returns the current connector token.
 func (c *Client) Token() string { return c.session.Token }
 
+// APIKey returns the ephemeral key required by the local proxy.
+func (c *Client) APIKey() string { return c.localAPIKey }
+
 // BaseURL returns the paired host URL.
 func (c *Client) BaseURL() string { return c.baseURL }
 
 func randomID(prefix string) (string, error) {
-	value := make([]byte, 12)
+	return randomToken(prefix, 12)
+}
+
+func randomToken(prefix string, size int) (string, error) {
+	value := make([]byte, size)
 	if _, err := rand.Read(value); err != nil {
 		return "", fmt.Errorf("generate connector identity: %w", err)
 	}

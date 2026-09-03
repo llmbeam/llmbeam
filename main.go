@@ -264,7 +264,7 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	listener, err := client.Listen(ctx, listen)
+	listener, localAPIKey, err := client.ListenWithAPIKey(ctx, listen)
 	if err != nil {
 		fmt.Fprintln(stderr, "error:", err)
 		return 1
@@ -272,6 +272,7 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	defer listener.Close()
 	fmt.Fprintln(stdout, "\nConnected.")
 	fmt.Fprintf(stdout, "Local OpenAI endpoint:\n  http://%s/v1\n", listener.Addr().String())
+	fmt.Fprintf(stdout, "Local API key:\n  %s\n", localAPIKey)
 	fmt.Fprintf(stdout, "Connector session expires: %s\n", session.Expires.Local().Format(time.RFC3339))
 	<-ctx.Done()
 	return 0

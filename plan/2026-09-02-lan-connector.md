@@ -197,15 +197,15 @@ internal/connect/client_test.go
 
 ### 阶段 5：本地 OpenAI proxy
 
-- [ ] connector 只绑定 `127.0.0.1`。
-- [ ] 实现本地 `GET /v1/models` 转发。
-- [ ] 实现本地 `POST /v1/chat/completions` 转发。
-- [ ] 透传 SSE，不缓冲长响应。
-- [ ] 注入远端 connector token。
-- [ ] 为本地客户端生成随机 API key。
-- [ ] 对本地请求校验 API key。
-- [ ] 不转发任意路径，避免变成开放代理。
-- [ ] 支持上游 401、502、超时、断线和重连。
+- [x] connector 只绑定 `127.0.0.1`。
+- [x] 实现本地 `GET /v1/models` 转发。
+- [x] 实现本地 `POST /v1/chat/completions` 转发。
+- [x] 透传 SSE，不缓冲长响应。
+- [x] 注入远端 connector token。
+- [x] 为本地客户端生成随机 API key。
+- [x] 对本地请求校验 API key。
+- [x] 不转发任意路径，避免变成开放代理。
+- [x] 支持上游 401、502、超时、断线和重连。
 
 涉及文件：
 
