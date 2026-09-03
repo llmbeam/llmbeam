@@ -4,8 +4,13 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/llmbeam/llmbeam/internal/backend"
+	"github.com/llmbeam/llmbeam/internal/pair"
 )
 
 func TestConnectorInfoDoesNotExposeCode(t *testing.T) {
@@ -45,6 +50,25 @@ func TestConnectorSessionsRedactsCredentials(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "test-client") {
 		t.Fatalf("session response omitted client metadata: %s", body)
+	}
+}
+
+func TestConnectorSessionInvalidAfterPCARestart(t *testing.T) {
+	firstConnectors := pair.NewConnectorManager()
+	oldToken := connectorTokenFromManager(t, firstConnectors)
+
+	secondConnectors := pair.NewConnectorManager()
+	if _, ok := secondConnectors.Session(oldToken); ok {
+		t.Fatal("connector session survived PC A restart")
+	}
+	registry := backend.NewRegistry(nil, time.Second)
+	handler := NewWithConnector(pair.NewManager(time.Minute), registry, pair.NewRateLimiter(5, time.Minute, time.Minute), nil, secondConnectors).Handler()
+	request := httptest.NewRequest(http.MethodGet, "http://127.0.0.1/v1/models", nil)
+	request.Header.Set("Authorization", "Bearer "+oldToken)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("old connector token status=%d, want 401", response.Code)
 	}
 }
 

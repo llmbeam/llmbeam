@@ -243,7 +243,7 @@ internal/connect/proxy_test.go
 - [x] `/v1/chat/completions` 转发。
 - [x] SSE 流式输出。
 - [x] 上游 401、超时和断线。
-- [ ] PC A 重启后的失效行为。
+- [x] PC A 重启后的失效行为。
 - [x] 本地 API key 校验。
 - [ ] 端口冲突和自动端口选择。
 
