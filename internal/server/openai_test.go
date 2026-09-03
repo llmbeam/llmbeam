@@ -13,9 +13,20 @@ import (
 	"github.com/llmbeam/llmbeam/internal/pair"
 )
 
-func connectorToken(t *testing.T, pairs *pair.Manager) string {
+func newConnectorTestServer(t *testing.T, backends []*backend.Backend) (*httptest.Server, *pair.Manager, *pair.ConnectorManager) {
 	t.Helper()
-	session, ok := pairs.Redeem(pairs.Code(), "LLMBeam connector", "127.0.0.1")
+	pairs := pair.NewManager(time.Minute)
+	connectors := pair.NewConnectorManager()
+	registry := backend.NewRegistry(backends, 500*time.Millisecond)
+	limiter := pair.NewRateLimiter(5, time.Minute, 5*time.Minute)
+	server := httptest.NewServer(NewWithConnector(pairs, registry, limiter, nil, connectors).Handler())
+	t.Cleanup(server.Close)
+	return server, pairs, connectors
+}
+
+func connectorTokenFromManager(t *testing.T, connectors *pair.ConnectorManager) string {
+	t.Helper()
+	session, ok := connectors.Redeem(connectors.Code(), "test-client", "test-public-key", "LLMBeam connector", "127.0.0.1")
 	if !ok {
 		t.Fatal("create connector session")
 	}
@@ -34,7 +45,7 @@ func connectorRequest(t *testing.T, method, url, token, body string) *http.Reque
 }
 
 func TestOpenAIModelsRequireConnectorBearerToken(t *testing.T) {
-	server, pairs := newTestServer(t, nil, nil)
+	server, pairs, _ := newConnectorTestServer(t, nil)
 	cookie, _ := pairUp(t, server, pairs, "browser")
 
 	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v1/models", nil)
@@ -65,9 +76,9 @@ func TestOpenAIModelsReturnsNamespacedModels(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[{"id":"org/model-7b"},{"id":"model-2"}]}`))
 	}))
 	t.Cleanup(upstream.Close)
-	server, pairs := newTestServer(t,
-		[]*backend.Backend{{ID: "fake", BaseURL: upstream.URL + "/v1"}}, nil)
-	token := connectorToken(t, pairs)
+	server, _, connectors := newConnectorTestServer(t,
+		[]*backend.Backend{{ID: "fake", BaseURL: upstream.URL + "/v1"}})
+	token := connectorTokenFromManager(t, connectors)
 	request := connectorRequest(t, http.MethodGet, server.URL+"/v1/models", token, "")
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -117,9 +128,9 @@ func TestOpenAIChatMapsModelAndStreamsSSE(t *testing.T) {
 	upstream := httptest.NewServer(mux)
 	t.Cleanup(upstream.Close)
 
-	server, pairs := newTestServer(t,
-		[]*backend.Backend{{ID: "fake", BaseURL: upstream.URL + "/v1"}}, nil)
-	token := connectorToken(t, pairs)
+	server, _, connectors := newConnectorTestServer(t,
+		[]*backend.Backend{{ID: "fake", BaseURL: upstream.URL + "/v1"}})
+	token := connectorTokenFromManager(t, connectors)
 	request := connectorRequest(t, http.MethodPost, server.URL+"/v1/chat/completions", token,
 		`{"model":"fake/org/model-7b","messages":[{"role":"user","content":"hi"}],"stream":false}`)
 	response, err := http.DefaultClient.Do(request)
@@ -145,8 +156,8 @@ func TestOpenAIChatMapsModelAndStreamsSSE(t *testing.T) {
 }
 
 func TestOpenAIChatUsesOpenAIErrorShape(t *testing.T) {
-	server, pairs := newTestServer(t, nil, nil)
-	token := connectorToken(t, pairs)
+	server, _, connectors := newConnectorTestServer(t, nil)
+	token := connectorTokenFromManager(t, connectors)
 	request := connectorRequest(t, http.MethodPost, server.URL+"/v1/chat/completions", token,
 		`{"model":"missing/model","messages":[]}`)
 	response, err := http.DefaultClient.Do(request)

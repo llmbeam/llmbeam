@@ -32,7 +32,7 @@ func (s *Server) connectorAuth(next http.Handler) http.Handler {
 			openAIError(w, http.StatusUnauthorized, "unauthenticated")
 			return
 		}
-		if _, ok := s.pairs.Session(token); !ok {
+		if _, ok := s.connectors.Session(token); !ok {
 			openAIError(w, http.StatusUnauthorized, "unauthenticated")
 			return
 		}

@@ -176,23 +176,7 @@ func (m *Manager) publishCodeLocked() {
 }
 
 func (m *Manager) randomCode() string {
-	var code strings.Builder
-	code.Grow(codeLength)
-	for code.Len() < codeLength {
-		var b [1]byte
-		if _, err := io.ReadFull(m.random, b[:]); err != nil {
-			panic("crypto/rand unavailable: " + err.Error())
-		}
-
-		// Rejection sampling avoids modulo bias because the alphabet length does
-		// not evenly divide the 256 possible byte values.
-		limit := 256 - (256 % len(codeAlphabet))
-		if int(b[0]) >= limit {
-			continue
-		}
-		code.WriteByte(codeAlphabet[int(b[0])%len(codeAlphabet)])
-	}
-	return code.String()
+	return randomCode(m.random, codeLength)
 }
 
 func (m *Manager) randomBytes(size int) []byte {

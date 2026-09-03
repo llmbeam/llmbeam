@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/llmbeam/llmbeam/internal/backend"
 	"github.com/llmbeam/llmbeam/internal/pair"
@@ -19,23 +20,45 @@ const sessionCookieName = "sc_session"
 
 // Server owns the HTTP routing layer for the gateway.
 type Server struct {
-	pairs    *pair.Manager
-	registry *backend.Registry
-	limiter  *pair.RateLimiter
-	static   fs.FS
-	upstream *http.Client
+	pairs      *pair.Manager
+	connectors *pair.ConnectorManager
+	registry   *backend.Registry
+	limiter    *pair.RateLimiter
+	static     fs.FS
+	upstream   *http.Client
 }
 
 // New constructs a gateway server. static may be nil in API-only tests and
 // development builds where the web UI has not been compiled yet.
 func New(pairs *pair.Manager, registry *backend.Registry, limiter *pair.RateLimiter, static fs.FS) *Server {
-	return &Server{
-		pairs:    pairs,
-		registry: registry,
-		limiter:  limiter,
-		static:   static,
-		upstream: newUpstreamClient(),
+	return NewWithConnector(pairs, registry, limiter, static, pair.NewConnectorManager())
+}
+
+// NewWithConnector constructs a gateway with an explicit connector manager.
+// It is useful for tests and for applications that need to manage connector
+// credentials independently from browser sessions.
+func NewWithConnector(pairs *pair.Manager, registry *backend.Registry, limiter *pair.RateLimiter, static fs.FS, connectors *pair.ConnectorManager) *Server {
+	if connectors == nil {
+		connectors = pair.NewConnectorManager()
 	}
+	return &Server{
+		pairs:      pairs,
+		connectors: connectors,
+		registry:   registry,
+		limiter:    limiter,
+		static:     static,
+		upstream:   newUpstreamClient(),
+	}
+}
+
+// ConnectorCode returns the current one-time code for native connectors.
+func (s *Server) ConnectorCode() string {
+	return s.connectors.Code()
+}
+
+// ConnectorCodeExpiry returns the expiry of the current native connector code.
+func (s *Server) ConnectorCodeExpiry() time.Time {
+	return s.connectors.CodeExpiry()
 }
 
 // Handler builds the complete HTTP handler with security middleware.
@@ -46,6 +69,10 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/session", s.auth(http.HandlerFunc(s.handleSession)))
 	mux.Handle("GET /api/models", s.auth(http.HandlerFunc(s.handleModels)))
 	mux.Handle("POST /api/chat", s.auth(http.HandlerFunc(s.handleChat)))
+	mux.HandleFunc("GET /api/connector/info", s.handleConnectorInfo)
+	mux.HandleFunc("POST /api/connector/pair", s.handleConnectorPair)
+	mux.Handle("POST /api/connector/refresh", s.connectorAuth(http.HandlerFunc(s.handleConnectorRefresh)))
+	mux.Handle("POST /api/connector/revoke", s.connectorAuth(http.HandlerFunc(s.handleConnectorRevoke)))
 	mux.Handle("GET /v1/models", s.connectorAuth(http.HandlerFunc(s.handleOpenAIModels)))
 	mux.Handle("POST /v1/chat/completions", s.connectorAuth(http.HandlerFunc(s.handleOpenAIChat)))
 	if s.static != nil {

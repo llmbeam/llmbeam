@@ -114,11 +114,11 @@ curl http://<PC-A-IP>:8442/v1/models
 
 ### 阶段 2：Connector 配对模型
 
-- [ ] 在 `internal/pair` 中增加独立的 connector pairing state。
-- [ ] 增加 6 位 Connect Code 生成、规范化和 TTL。
-- [ ] 增加单次兑换、并发保护和失败限流测试。
-- [ ] 增加 connector session token、过期和撤销能力。
-- [ ] 不改变现有浏览器 8 位 code 的行为和测试。
+- [x] 在 `internal/pair` 中增加独立的 connector pairing state。
+- [x] 增加 6 位 Connect Code 生成、规范化和 TTL。
+- [x] 增加单次兑换、并发保护和失败限流测试。
+- [x] 增加 connector session token、过期和撤销能力。
+- [x] 不改变现有浏览器 8 位 code 的行为和测试。
 
 建议接口：
 
