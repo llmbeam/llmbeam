@@ -216,14 +216,14 @@ internal/connect/proxy_test.go
 
 ### 阶段 6：加密传输和设备管理
 
-- [ ] 为 PC A 生成临时 TLS 证书或实现 Noise/X25519 握手。
-- [ ] 配对时返回并验证 server public key/fingerprint。
-- [ ] 将 fingerprint 保存到 connector 配置。
-- [ ] 后续重连拒绝 fingerprint 不匹配的主机。
-- [ ] 增加 PC A 侧当前 connector 列表。
-- [ ] 增加 connector revoke 能力。
-- [ ] 明确 token 文件权限；Unix 使用 `0600`。
-- [ ] Windows 使用合适的用户私有存储方式。
+- [x] 为 PC A 生成临时 TLS 证书或实现 Noise/X25519 握手。
+- [x] 配对时返回并验证 server public key/fingerprint。
+- [x] 将 fingerprint 保存到 connector 配置。
+- [x] 后续重连拒绝 fingerprint 不匹配的主机。
+- [x] 增加 PC A 侧当前 connector 列表。
+- [x] 增加 connector revoke 能力。
+- [x] 明确 token 文件权限；Unix 使用 `0600`。
+- [x] Windows 使用合适的用户私有存储方式。
 
 ### 阶段 7：测试、文档和发布
 

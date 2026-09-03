@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -28,12 +29,14 @@ const (
 
 // Peer describes an LLMBeam host discovered on the local network.
 type Peer struct {
-	Name      string
-	Host      string
-	Port      int
-	DeviceID  string
-	Version   string
-	Addresses []net.IP
+	Name        string
+	Host        string
+	Port        int
+	TLSPort     int
+	DeviceID    string
+	Version     string
+	Fingerprint string
+	Addresses   []net.IP
 }
 
 // LANAdvertiser publishes an LLMBeam service over mDNS.
@@ -79,6 +82,8 @@ func (a *Advertiser) Start(name string, port int, metadata map[string]string) er
 		return err
 	}
 	version := strings.TrimSpace(metadata["version"])
+	tlsPort := strings.TrimSpace(metadata["tls_port"])
+	fingerprint := strings.TrimSpace(metadata["fingerprint"])
 	instance := instanceName(name, deviceID)
 	ipText, err := netutil.LANIP()
 	if err != nil {
@@ -96,7 +101,7 @@ func (a *Advertiser) Start(name string, port int, metadata map[string]string) er
 		fmt.Sprintf("llmbeam-%s.local.", deviceID),
 		port,
 		[]net.IP{ip},
-		publicTXT(deviceID, version),
+		publicTXT(deviceID, version, tlsPort, fingerprint),
 	)
 	if err != nil {
 		return fmt.Errorf("create mDNS service: %w", err)
@@ -210,13 +215,19 @@ func peerFromEntry(entry *mdns.ServiceEntry) (Peer, bool) {
 	if len(addresses) == 0 {
 		return Peer{}, false
 	}
+	tlsPort := 0
+	if value, err := strconv.Atoi(metadata["tls_port"]); err == nil && value >= 1 && value <= 65535 {
+		tlsPort = value
+	}
 	return Peer{
-		Name:      serviceInstanceName(entry.Name),
-		Host:      strings.TrimSuffix(entry.Host, "."),
-		Port:      entry.Port,
-		DeviceID:  deviceID,
-		Version:   metadata["version"],
-		Addresses: addresses,
+		Name:        serviceInstanceName(entry.Name),
+		Host:        strings.TrimSuffix(entry.Host, "."),
+		Port:        entry.Port,
+		TLSPort:     tlsPort,
+		DeviceID:    deviceID,
+		Version:     metadata["version"],
+		Fingerprint: metadata["fingerprint"],
+		Addresses:   addresses,
 	}, true
 }
 
@@ -234,10 +245,16 @@ func peerLess(left, right Peer) bool {
 	return left.DeviceID < right.DeviceID
 }
 
-func publicTXT(deviceID, version string) []string {
+func publicTXT(deviceID, version, tlsPort, fingerprint string) []string {
 	txt := []string{"device_id=" + deviceID}
 	if version != "" {
 		txt = append(txt, "version="+version)
+	}
+	if tlsPort != "" {
+		txt = append(txt, "tls_port="+tlsPort)
+	}
+	if fingerprint != "" {
+		txt = append(txt, "fingerprint="+fingerprint)
 	}
 	return txt
 }

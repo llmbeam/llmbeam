@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -14,15 +15,18 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/llmbeam/llmbeam/internal/security"
 )
 
 const defaultHTTPTimeout = 10 * time.Second
 
 // Session is the credential returned after a successful one-time pairing.
 type Session struct {
-	Token    string    `json:"token"`
-	DeviceID string    `json:"device_id"`
-	Expires  time.Time `json:"expires_at"`
+	Token       string    `json:"token"`
+	DeviceID    string    `json:"device_id"`
+	Expires     time.Time `json:"expires_at"`
+	Fingerprint string    `json:"server_fingerprint,omitempty"`
 }
 
 // Client talks to a paired LLMBeam host.
@@ -31,10 +35,59 @@ type Client struct {
 	http        *http.Client
 	session     Session
 	localAPIKey string
+	fingerprint string
 }
 
 // New creates a client for a host URL.
 func New(baseURL string, httpClient *http.Client) (*Client, error) {
+	return newClient(baseURL, httpClient, "")
+}
+
+// NewPinned creates a client that authenticates a self-signed TLS host by its
+// SHA-256 certificate fingerprint.
+func NewPinned(baseURL, fingerprint string, httpClient *http.Client) (*Client, error) {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	parsed, err := url.Parse(baseURL)
+	if err != nil || parsed.Scheme != "https" {
+		return nil, errors.New("pinned connector host must use HTTPS")
+	}
+	normalized, err := security.NormalizeFingerprint(fingerprint)
+	if err != nil {
+		return nil, err
+	}
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: defaultHTTPTimeout}
+	}
+	transport := httpClient.Transport
+	if transport == nil {
+		transport = http.DefaultTransport
+	}
+	baseTransport, ok := transport.(*http.Transport)
+	if !ok {
+		return nil, errors.New("pinned connector requires an HTTP transport")
+	}
+	clone := baseTransport.Clone()
+	if clone.TLSClientConfig == nil {
+		clone.TLSClientConfig = &tls.Config{}
+	} else {
+		clone.TLSClientConfig = clone.TLSClientConfig.Clone()
+	}
+	clone.TLSClientConfig.InsecureSkipVerify = true
+	clone.TLSClientConfig.MinVersion = tls.VersionTLS13
+	clone.TLSClientConfig.VerifyPeerCertificate, err = security.VerifyPeerCertificate(normalized)
+	if err != nil {
+		return nil, err
+	}
+	pinnedClient := *httpClient
+	pinnedClient.Transport = clone
+	client, err := newClient(baseURL, &pinnedClient, normalized)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func newClient(baseURL string, httpClient *http.Client, fingerprint string) (*Client, error) {
 	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
 	parsed, err := url.Parse(baseURL)
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || (parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
@@ -47,7 +100,7 @@ func New(baseURL string, httpClient *http.Client) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{baseURL: baseURL, http: httpClient, localAPIKey: localAPIKey}, nil
+	return &Client{baseURL: baseURL, http: httpClient, localAPIKey: localAPIKey, fingerprint: fingerprint}, nil
 }
 
 // Pair exchanges a one-time Connect Code for a connector session.
@@ -97,6 +150,9 @@ func (c *Client) Pair(ctx context.Context, code string) (Session, error) {
 	if session.Token == "" || session.Expires.IsZero() {
 		return Session{}, errors.New("host returned an invalid connector session")
 	}
+	if c.fingerprint != "" && !strings.EqualFold(c.fingerprint, session.Fingerprint) {
+		return Session{}, errors.New("TLS fingerprint mismatch")
+	}
 	c.session = session
 	return session, nil
 }
@@ -123,6 +179,9 @@ func (c *Client) Refresh(ctx context.Context) (Session, error) {
 	var session Session
 	if err := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&session); err != nil {
 		return Session{}, fmt.Errorf("decode refresh response: %w", err)
+	}
+	if c.fingerprint != "" && !strings.EqualFold(c.fingerprint, session.Fingerprint) {
+		return Session{}, errors.New("TLS fingerprint mismatch")
 	}
 	c.session = session
 	return session, nil

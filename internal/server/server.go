@@ -20,12 +20,13 @@ const sessionCookieName = "sc_session"
 
 // Server owns the HTTP routing layer for the gateway.
 type Server struct {
-	pairs      *pair.Manager
-	connectors *pair.ConnectorManager
-	registry   *backend.Registry
-	limiter    *pair.RateLimiter
-	static     fs.FS
-	upstream   *http.Client
+	pairs             *pair.Manager
+	connectors        *pair.ConnectorManager
+	registry          *backend.Registry
+	limiter           *pair.RateLimiter
+	static            fs.FS
+	upstream          *http.Client
+	serverFingerprint string
 }
 
 // New constructs a gateway server. static may be nil in API-only tests and
@@ -61,6 +62,14 @@ func (s *Server) ConnectorCodeExpiry() time.Time {
 	return s.connectors.CodeExpiry()
 }
 
+// SetServerFingerprint attaches the public TLS identity to connector metadata.
+func (s *Server) SetServerFingerprint(fingerprint string) {
+	s.serverFingerprint = strings.TrimSpace(fingerprint)
+}
+
+// ServerFingerprint returns the configured connector TLS fingerprint.
+func (s *Server) ServerFingerprint() string { return s.serverFingerprint }
+
 // Handler builds the complete HTTP handler with security middleware.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
@@ -70,6 +79,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/models", s.auth(http.HandlerFunc(s.handleModels)))
 	mux.Handle("POST /api/chat", s.auth(http.HandlerFunc(s.handleChat)))
 	mux.HandleFunc("GET /api/connector/info", s.handleConnectorInfo)
+	mux.Handle("GET /api/connector/sessions", s.connectorAuth(http.HandlerFunc(s.handleConnectorSessions)))
 	mux.HandleFunc("POST /api/connector/pair", s.handleConnectorPair)
 	mux.Handle("POST /api/connector/refresh", s.connectorAuth(http.HandlerFunc(s.handleConnectorRefresh)))
 	mux.Handle("POST /api/connector/revoke", s.connectorAuth(http.HandlerFunc(s.handleConnectorRevoke)))

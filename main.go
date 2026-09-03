@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"github.com/llmbeam/llmbeam/internal/netutil"
 	"github.com/llmbeam/llmbeam/internal/pair"
 	"github.com/llmbeam/llmbeam/internal/remote"
+	"github.com/llmbeam/llmbeam/internal/security"
 	"github.com/llmbeam/llmbeam/internal/server"
 	"github.com/llmbeam/llmbeam/internal/ui"
 )
@@ -146,8 +148,46 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	defer listener.Close()
 
+	var tlsServer *http.Server
+	var tlsServeError chan error
+	tlsPort := 0
+	identity, identityErr := security.NewTLSIdentity()
+	if identityErr != nil {
+		fmt.Fprintln(stderr, "warning: secure LAN connector unavailable:", identityErr)
+	} else if configuration.port == 65535 {
+		fmt.Fprintln(stderr, "warning: secure LAN connector unavailable: no TLS port available")
+	} else {
+		tlsPort = configuration.port + 1
+		tlsAddress := net.JoinHostPort("0.0.0.0", strconv.Itoa(tlsPort))
+		rawTLSListener, listenErr := net.Listen("tcp", tlsAddress)
+		if listenErr != nil {
+			fmt.Fprintln(stderr, "warning: secure LAN connector unavailable:", listenErr)
+			tlsPort = 0
+		} else {
+			gateway.SetServerFingerprint(identity.Fingerprint)
+			tlsServer = &http.Server{
+				Addr:              tlsAddress,
+				Handler:           handler,
+				ReadHeaderTimeout: 5 * time.Second,
+				ReadTimeout:       30 * time.Second,
+				IdleTimeout:       2 * time.Minute,
+				MaxHeaderBytes:    1 << 20,
+			}
+			tlsServeError = make(chan error, 1)
+			go func() {
+				tlsServeError <- tlsServer.Serve(tls.NewListener(rawTLSListener, identity.ServerConfig()))
+			}()
+			defer tlsServer.Close()
+		}
+	}
+
 	advertiser := lan.NewAdvertiser()
-	if err := advertiser.Start(lan.DefaultDeviceName(), configuration.port, map[string]string{"version": version}); err != nil {
+	metadata := map[string]string{"version": version}
+	if tlsPort > 0 {
+		metadata["tls_port"] = strconv.Itoa(tlsPort)
+		metadata["fingerprint"] = gateway.ServerFingerprint()
+	}
+	if err := advertiser.Start(lan.DefaultDeviceName(), configuration.port, metadata); err != nil {
 		fmt.Fprintln(stderr, "warning: LAN discovery unavailable:", err)
 	} else {
 		defer advertiser.Close()
@@ -160,6 +200,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	select {
 	case err := <-serveError:
+		if tlsServer != nil {
+			_ = tlsServer.Close()
+		}
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fmt.Fprintln(stderr, "server error:", err)
 			return 1
@@ -172,6 +215,17 @@ func run(args []string, stdout, stderr io.Writer) int {
 			_ = httpServer.Close()
 			fmt.Fprintln(stderr, "server shutdown:", err)
 		}
+		if tlsServer != nil {
+			if err := tlsServer.Shutdown(shutdownCtx); err != nil {
+				_ = tlsServer.Close()
+				fmt.Fprintln(stderr, "TLS server shutdown:", err)
+			}
+			if tlsServeError != nil {
+				if err := <-tlsServeError; err != nil && !errors.Is(err, http.ErrServerClosed) {
+					fmt.Fprintln(stderr, "TLS server error:", err)
+				}
+			}
+		}
 		if err := <-serveError; err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fmt.Fprintln(stderr, "server error:", err)
 			return 1
@@ -183,10 +237,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("llmbeam connect", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	var host, listen string
+	var host, listen, fingerprint string
 	var timeout time.Duration
 	flags.StringVar(&host, "host", "", "LLMBeam host (host:port or URL); skip mDNS discovery")
 	flags.StringVar(&listen, "listen", "127.0.0.1:0", "local loopback listen address")
+	flags.StringVar(&fingerprint, "fingerprint", "", "expected SHA-256 TLS certificate fingerprint for --host https://...")
 	flags.DurationVar(&timeout, "timeout", 3*time.Second, "mDNS discovery timeout")
 	if err := flags.Parse(args); err != nil {
 		return 2
@@ -201,6 +256,7 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 
 	baseURL := strings.TrimSpace(host)
+	serverFingerprint := strings.TrimSpace(fingerprint)
 	if baseURL == "" {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		peers, err := lan.NewDiscoverer().Discover(ctx)
@@ -238,7 +294,13 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			fmt.Fprintln(stderr, "error: selected host has no usable LAN address")
 			return 1
 		}
-		baseURL = "http://" + net.JoinHostPort(peer.Addresses[0].String(), strconv.Itoa(peer.Port))
+		if peer.TLSPort > 0 && peer.Fingerprint != "" {
+			baseURL = "https://" + net.JoinHostPort(peer.Addresses[0].String(), strconv.Itoa(peer.TLSPort))
+			serverFingerprint = peer.Fingerprint
+		} else {
+			baseURL = "http://" + net.JoinHostPort(peer.Addresses[0].String(), strconv.Itoa(peer.Port))
+			fmt.Fprintln(stderr, "warning: selected host does not advertise a pinned TLS connector; using HTTP")
+		}
 	}
 	baseURL, err := connect.NormalizeHost(baseURL)
 	if err != nil {
@@ -250,7 +312,12 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "error: cannot read Connect Code:", err)
 		return 1
 	}
-	client, err := connect.New(baseURL, nil)
+	var client *connect.Client
+	if strings.HasPrefix(baseURL, "https://") {
+		client, err = connect.NewPinned(baseURL, serverFingerprint, nil)
+	} else {
+		client, err = connect.New(baseURL, nil)
+	}
 	if err != nil {
 		fmt.Fprintln(stderr, "error:", err)
 		return 2
@@ -261,6 +328,13 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if err != nil {
 		fmt.Fprintln(stderr, "error:", err)
 		return 1
+	}
+	if store, storeErr := connect.NewSessionStore(""); storeErr == nil {
+		if storeErr = store.Save(connect.StoredSession{Host: baseURL, Fingerprint: serverFingerprint, Session: session}); storeErr != nil {
+			fmt.Fprintln(stderr, "warning: could not save connector session:", storeErr)
+		}
+	} else {
+		fmt.Fprintln(stderr, "warning: could not initialize connector session store:", storeErr)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

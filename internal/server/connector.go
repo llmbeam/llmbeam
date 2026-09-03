@@ -3,13 +3,15 @@ package server
 import (
 	"net/http"
 	"strings"
+	"time"
 )
 
 func (s *Server) handleConnectorInfo(w http.ResponseWriter, _ *http.Request) {
 	jsonOK(w, map[string]any{
-		"object":      "connector_info",
-		"code_length": 6,
-		"expires_at":  s.connectors.CodeExpiry(),
+		"object":             "connector_info",
+		"code_length":        6,
+		"expires_at":         s.connectors.CodeExpiry(),
+		"server_fingerprint": s.serverFingerprint,
 	})
 }
 
@@ -36,10 +38,28 @@ func (s *Server) handleConnectorPair(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonOK(w, map[string]any{
-		"token":      session.Token,
-		"device_id":  session.ID,
-		"expires_at": session.Expires,
+		"token":              session.Token,
+		"device_id":          session.ID,
+		"expires_at":         session.Expires,
+		"server_fingerprint": s.serverFingerprint,
 	})
+}
+
+func (s *Server) handleConnectorSessions(w http.ResponseWriter, _ *http.Request) {
+	type sessionInfo struct {
+		ID       string    `json:"device_id"`
+		ClientID string    `json:"client_id"`
+		Device   string    `json:"device"`
+		IP       string    `json:"ip"`
+		Created  time.Time `json:"created_at"`
+		Expires  time.Time `json:"expires_at"`
+	}
+	sessions := s.connectors.Sessions()
+	items := make([]sessionInfo, 0, len(sessions))
+	for _, session := range sessions {
+		items = append(items, sessionInfo{ID: session.ID, ClientID: session.ClientID, Device: session.Device, IP: session.IP, Created: session.Created, Expires: session.Expires})
+	}
+	jsonOK(w, map[string]any{"object": "list", "data": items})
 }
 
 func (s *Server) handleConnectorRefresh(w http.ResponseWriter, r *http.Request) {
@@ -50,9 +70,10 @@ func (s *Server) handleConnectorRefresh(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	jsonOK(w, map[string]any{
-		"token":      session.Token,
-		"device_id":  session.ID,
-		"expires_at": session.Expires,
+		"token":              session.Token,
+		"device_id":          session.ID,
+		"expires_at":         session.Expires,
+		"server_fingerprint": s.serverFingerprint,
 	})
 }
 
