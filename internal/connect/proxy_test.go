@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -120,4 +121,64 @@ func TestListenRejectsNilContextAndUnpairedClient(t *testing.T) {
 	if _, _, err := client.ListenWithAPIKey(nil, "127.0.0.1:0"); err == nil {
 		t.Fatal("nil context unexpectedly accepted")
 	}
+}
+
+func TestListenAutomaticallySelectsAvailablePort(t *testing.T) {
+	client := testPairedClient(t, func(request *http.Request) (*http.Response, error) {
+		if request.Header.Get("Authorization") != "Bearer remote-connector-token" {
+			return nil, errors.New("connector token was not injected")
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"object":"list","data":[]}`)),
+		}, nil
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	listener, apiKey, err := client.ListenWithAPIKey(ctx, "127.0.0.1:0")
+	if err != nil {
+		if isPermissionError(err) {
+			t.Skipf("sandbox does not permit TCP listeners: %v", err)
+		}
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	if listener.Addr().(*net.TCPAddr).Port == 0 {
+		t.Fatal("automatic port selection returned port 0")
+	}
+	request, err := http.NewRequest(http.MethodGet, "http://"+listener.Addr().String()+"/v1/models", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Authorization", "Bearer "+apiKey)
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("automatic-port proxy status=%d", response.StatusCode)
+	}
+}
+
+func TestListenReportsPortConflict(t *testing.T) {
+	occupied, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
+	if err != nil {
+		if isPermissionError(err) {
+			t.Skipf("sandbox does not permit TCP listeners: %v", err)
+		}
+		t.Fatal(err)
+	}
+	defer occupied.Close()
+	client := testPairedClient(t, nil)
+	address := occupied.Addr().String()
+	_, _, err = client.ListenWithAPIKey(context.Background(), address)
+	if err == nil || !strings.Contains(err.Error(), "listen local connector") {
+		t.Fatalf("port conflict error=%v", err)
+	}
+}
+
+func isPermissionError(err error) bool {
+	return err != nil && (strings.Contains(err.Error(), "operation not permitted") || strings.Contains(err.Error(), "permission denied"))
 }
