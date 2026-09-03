@@ -46,6 +46,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/session", s.auth(http.HandlerFunc(s.handleSession)))
 	mux.Handle("GET /api/models", s.auth(http.HandlerFunc(s.handleModels)))
 	mux.Handle("POST /api/chat", s.auth(http.HandlerFunc(s.handleChat)))
+	mux.Handle("GET /v1/models", s.connectorAuth(http.HandlerFunc(s.handleOpenAIModels)))
+	mux.Handle("POST /v1/chat/completions", s.connectorAuth(http.HandlerFunc(s.handleOpenAIChat)))
 	if s.static != nil {
 		mux.Handle("GET /", http.FileServerFS(s.static))
 	}
