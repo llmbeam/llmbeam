@@ -23,6 +23,7 @@ import (
 	"rsc.io/qr"
 
 	"github.com/llmbeam/llmbeam/internal/backend"
+	"github.com/llmbeam/llmbeam/internal/lan"
 	"github.com/llmbeam/llmbeam/internal/netutil"
 	"github.com/llmbeam/llmbeam/internal/pair"
 	"github.com/llmbeam/llmbeam/internal/remote"
@@ -133,10 +134,23 @@ func run(args []string, stdout, stderr io.Writer) int {
 		IdleTimeout:       2 * time.Minute,
 		MaxHeaderBytes:    1 << 20,
 	}
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		fmt.Fprintln(stderr, "server error:", err)
+		return 1
+	}
+	defer listener.Close()
+
+	advertiser := lan.NewAdvertiser()
+	if err := advertiser.Start(lan.DefaultDeviceName(), configuration.port, map[string]string{"version": version}); err != nil {
+		fmt.Fprintln(stderr, "warning: LAN discovery unavailable:", err)
+	} else {
+		defer advertiser.Close()
+	}
 
 	serveError := make(chan error, 1)
 	go func() {
-		serveError <- httpServer.ListenAndServe()
+		serveError <- httpServer.Serve(listener)
 	}()
 
 	select {
