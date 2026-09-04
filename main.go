@@ -340,6 +340,14 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	} else {
 		fmt.Fprintln(stderr, "warning: could not initialize connector session store:", storeErr)
 	}
+	modelsCtx, modelsCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	models, modelsErr := client.Models(modelsCtx)
+	modelsCancel()
+	if modelsErr != nil {
+		fmt.Fprintln(stderr, "warning: could not retrieve models:", modelsErr)
+	} else {
+		printConnectModels(stdout, models)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	listener, localAPIKey, err := client.ListenWithAPIKey(ctx, listen)
@@ -354,6 +362,17 @@ func runConnect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "Connector session expires: %s\n", session.Expires.Local().Format(time.RFC3339))
 	<-ctx.Done()
 	return 0
+}
+
+func printConnectModels(stdout io.Writer, models []connect.Model) {
+	fmt.Fprintln(stdout, "Available models:")
+	if len(models) == 0 {
+		fmt.Fprintln(stdout, "  (none currently available)")
+		return
+	}
+	for _, model := range models {
+		fmt.Fprintf(stdout, "  - %s\n", model.ID)
+	}
 }
 
 func readConnectLine(stdin io.Reader, stdout io.Writer, prompt string) (string, error) {

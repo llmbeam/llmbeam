@@ -29,6 +29,13 @@ type Session struct {
 	Fingerprint string    `json:"server_fingerprint,omitempty"`
 }
 
+// Model describes a model exposed by the paired host's OpenAI endpoint.
+type Model struct {
+	ID      string `json:"id"`
+	Object  string `json:"object,omitempty"`
+	OwnedBy string `json:"owned_by,omitempty"`
+}
+
 // Client talks to a paired LLMBeam host.
 type Client struct {
 	baseURL     string
@@ -185,6 +192,44 @@ func (c *Client) Refresh(ctx context.Context) (Session, error) {
 	}
 	c.session = session
 	return session, nil
+}
+
+// Models returns the models currently available on the paired host.
+func (c *Client) Models(ctx context.Context) ([]Model, error) {
+	if ctx == nil {
+		return nil, errors.New("nil models context")
+	}
+	if c.session.Token == "" {
+		return nil, errors.New("client is not paired")
+	}
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/v1/models", nil)
+	if err != nil {
+		return nil, fmt.Errorf("create models request: %w", err)
+	}
+	request.Header.Set("Authorization", "Bearer "+c.session.Token)
+	response, err := c.http.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("retrieve models: %w", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		if response.StatusCode == http.StatusUnauthorized {
+			return nil, errors.New("retrieve models rejected: connector session is invalid or expired")
+		}
+		return nil, fmt.Errorf("retrieve models rejected (%s)", response.Status)
+	}
+	var payload struct {
+		Data []Model `json:"data"`
+	}
+	if err := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&payload); err != nil {
+		return nil, fmt.Errorf("decode models response: %w", err)
+	}
+	for _, model := range payload.Data {
+		if strings.TrimSpace(model.ID) == "" {
+			return nil, errors.New("host returned a model without an id")
+		}
+	}
+	return payload.Data, nil
 }
 
 // Token returns the current connector token.

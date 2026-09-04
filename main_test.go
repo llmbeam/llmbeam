@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/llmbeam/llmbeam/internal/connect"
 	"github.com/llmbeam/llmbeam/internal/pair"
 	"rsc.io/qr"
 )
@@ -88,6 +89,21 @@ func TestPrintConnectorCode(t *testing.T) {
 	output := buffer.String()
 	if !strings.Contains(output, "LAN connector code: K7M-4QX") || !strings.Contains(output, "llmbeam connect") {
 		t.Fatalf("connector code output = %q", output)
+	}
+}
+
+func TestPrintConnectModels(t *testing.T) {
+	var buffer bytes.Buffer
+	printConnectModels(&buffer, []connect.Model{{ID: "ollama/llama3.2"}, {ID: "llama.cpp/Qwen3-8B"}})
+	output := buffer.String()
+	if !strings.Contains(output, "Available models:") || !strings.Contains(output, "  - ollama/llama3.2") || !strings.Contains(output, "  - llama.cpp/Qwen3-8B") {
+		t.Fatalf("model output = %q", output)
+	}
+
+	buffer.Reset()
+	printConnectModels(&buffer, nil)
+	if !strings.Contains(buffer.String(), "(none currently available)") {
+		t.Fatalf("empty model output = %q", buffer.String())
 	}
 }
 
