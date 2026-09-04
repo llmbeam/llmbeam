@@ -294,5 +294,5 @@ func isLANAddress(ip net.IP) bool {
 	if ip == nil || ip.IsLoopback() || ip.IsUnspecified() || ip.IsMulticast() {
 		return false
 	}
-	return ip.IsPrivate() || ip.IsLinkLocalUnicast()
+	return netutil.IsLocalIPv4(ip) || ip.IsLinkLocalUnicast()
 }

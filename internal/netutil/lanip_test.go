@@ -35,6 +35,7 @@ func TestLANIPRejectsUnsafeAddresses(t *testing.T) {
 	}{
 		{name: "loopback", addr: &net.UDPAddr{IP: net.ParseIP("127.0.0.1")}, want: "non-private"},
 		{name: "public", addr: &net.UDPAddr{IP: net.ParseIP("8.8.8.8")}, want: "non-private"},
+		{name: "benchmark", addr: &net.UDPAddr{IP: net.ParseIP("198.18.0.1")}, want: ""},
 		{name: "IPv6", addr: &net.UDPAddr{IP: net.ParseIP("fd00::1")}, want: "non-IPv4"},
 		{name: "wrong address type", addr: fakeAddr("not-udp"), want: "no UDP address"},
 	}
@@ -44,6 +45,12 @@ func TestLANIPRejectsUnsafeAddresses(t *testing.T) {
 			_, err := lanIP(func(string, string) (net.Conn, error) {
 				return fakeConn{local: tt.addr}, nil
 			})
+			if tt.want == "" {
+				if err != nil {
+					t.Fatalf("lanIP() error = %v, want success", err)
+				}
+				return
+			}
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("lanIP() error = %v, want error containing %q", err, tt.want)
 			}
@@ -67,7 +74,7 @@ func TestLANIPOnCurrentHost(t *testing.T) {
 		t.Skipf("no private outbound network available: %v", err)
 	}
 	ip := net.ParseIP(got)
-	if ip == nil || ip.To4() == nil || !ip.IsPrivate() || ip.IsLoopback() {
+	if ip == nil || !isLocalIPv4(ip) {
 		t.Fatalf("LANIP() returned unsafe address %q", got)
 	}
 }
