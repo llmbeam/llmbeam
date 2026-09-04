@@ -81,6 +81,16 @@ func TestPrintPairingWithoutQR(t *testing.T) {
 	}
 }
 
+func TestPrintConnectorCode(t *testing.T) {
+	var buffer bytes.Buffer
+	terminal := &terminalOutput{writer: &buffer}
+	terminal.printConnectorCode("K7M4QX", time.Now().Add(5*time.Minute))
+	output := buffer.String()
+	if !strings.Contains(output, "LAN connector code: K7M-4QX") || !strings.Contains(output, "llmbeam connect") {
+		t.Fatalf("connector code output = %q", output)
+	}
+}
+
 func TestPrintPairingUsesCompactQRCode(t *testing.T) {
 	var buffer bytes.Buffer
 	terminal := &terminalOutput{writer: &buffer}

@@ -118,6 +118,8 @@ llmbeam connect
 
 LLMBeam 会在局域网发布 mDNS `_llmbeam._tcp` 服务。PC B 随后会启动类似 `http://127.0.0.1:8333/v1` 的仅回环接口，并打印临时本地 API key。将这个 Base URL 和 API key 填入你的 Agent。两端支持时，connector 模型流量会使用临时 TLS 端点和证书指纹锁定；手机二维码流程仍使用普通 HTTP 端口。
 
+Connect Code 会显示在 PC A 的终端中，格式为 `LAN connector code: XXX-XXX`，有效期为 5 分钟。它与浏览器二维码配对码是两套独立的码。
+
 使用 OpenAI SDK 时，将 `base_url` 设置为输出的 `/v1` 地址，并将 `api_key` 设置为输出的本地密钥。在 Codex、Cursor 或 Continue 中选择 OpenAI-compatible provider，填入相同的 Base URL 和 API key 即可。
 
 如果防火墙或 Wi-Fi 隔离导致 mDNS 不可用，可以手动指定主机：

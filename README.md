@@ -122,6 +122,8 @@ llmbeam connect
 
 LLMBeam publishes an mDNS `_llmbeam._tcp` service on the LAN. PC B starts a loopback-only endpoint such as `http://127.0.0.1:8333/v1` and prints a short-lived local API key. Configure your client with that Base URL and key. Connector traffic uses the pinned ephemeral TLS endpoint when both sides support it; the browser QR flow remains available over the normal HTTP port.
 
+The Connect Code is printed on PC A's terminal as `LAN connector code: XXX-XXX` and expires after five minutes. It is separate from the browser QR pairing code.
+
 For OpenAI SDKs, set `base_url` to the printed `/v1` URL and `api_key` to the printed local key. In Codex, Cursor, or Continue, choose an OpenAI-compatible provider and enter the same Base URL and key.
 
 If mDNS is blocked by a firewall or Wi-Fi isolation, select the host manually:

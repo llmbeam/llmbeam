@@ -109,6 +109,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	gateway := server.New(pairs, registry, limiter, ui.FS())
 	handler := gateway.Handler()
 	access := pairingAccess{localURL: baseURL}
+	terminal.printConnectorCode(gateway.ConnectorCode(), gateway.ConnectorCodeExpiry())
 
 	var remoteServer *remote.Server
 	if configuration.remote {
@@ -440,6 +441,21 @@ func (output *terminalOutput) printDiscovery(results []backend.ProbeResult) {
 		if available == 0 {
 			fmt.Fprintln(w, "\n  No backend is running yet; model discovery will retry every 30s.")
 		}
+	})
+}
+
+func (output *terminalOutput) printConnectorCode(code string, expires time.Time) {
+	if len(code) != 6 {
+		return
+	}
+	output.block(func(w io.Writer) {
+		fmt.Fprintf(w, "\n  LAN connector code: %s-%s\n", code[:3], code[3:])
+		fmt.Fprintln(w, "  Run `llmbeam connect` on another computer, then enter this code.")
+		remaining := time.Until(expires).Round(time.Second)
+		if remaining < 0 {
+			remaining = 0
+		}
+		fmt.Fprintf(w, "  Connector code expires in %s.\n", remaining)
 	})
 }
 
