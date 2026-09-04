@@ -24,6 +24,10 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Verify release build
+        run: |
+          go vet ./...
+          go test ./...
       - name: Initialize Homebrew tap
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

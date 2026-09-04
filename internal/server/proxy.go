@@ -31,20 +31,30 @@ func newUpstreamClient() *http.Client {
 // handleChat proxies a chat request to the selected backend and streams the
 // OpenAI-style SSE response back without buffering it in memory.
 func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
+	s.handleChatWithError(w, r, jsonError)
+}
+
+func (s *Server) handleOpenAIChat(w http.ResponseWriter, r *http.Request) {
+	s.handleChatWithError(w, r, openAIError)
+}
+
+type errorResponder func(http.ResponseWriter, int, string)
+
+func (s *Server) handleChatWithError(w http.ResponseWriter, r *http.Request, respondError errorResponder) {
 	var payload map[string]json.RawMessage
 	if err := decodeJSON(w, r, &payload, maxChatRequestBytes); err != nil {
-		jsonError(w, http.StatusBadRequest, "bad_request")
+		respondError(w, http.StatusBadRequest, "bad_request")
 		return
 	}
 
 	var modelID string
 	if err := json.Unmarshal(payload["model"], &modelID); err != nil || modelID == "" {
-		jsonError(w, http.StatusBadRequest, "bad_request")
+		respondError(w, http.StatusBadRequest, "bad_request")
 		return
 	}
 	selected, upstreamModel, ok := s.registry.Resolve(modelID)
 	if !ok {
-		jsonError(w, http.StatusBadRequest, "unknown_model")
+		respondError(w, http.StatusBadRequest, "unknown_model")
 		return
 	}
 
@@ -56,7 +66,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, "bad_request")
+		respondError(w, http.StatusBadRequest, "bad_request")
 		return
 	}
 
@@ -83,14 +93,14 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 
 	response, err := request()
 	if err != nil {
-		jsonError(w, http.StatusBadGateway, "backend_unreachable")
+		respondError(w, http.StatusBadGateway, "backend_unreachable")
 		return
 	}
 	if response.StatusCode == http.StatusUnauthorized && selected.RefreshAuth() {
 		_ = response.Body.Close()
 		response, err = request()
 		if err != nil {
-			jsonError(w, http.StatusBadGateway, "backend_unreachable")
+			respondError(w, http.StatusBadGateway, "backend_unreachable")
 			return
 		}
 	}
@@ -103,7 +113,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 			"status", response.StatusCode,
 			"body", string(responseBody),
 		)
-		jsonError(w, http.StatusBadGateway, "backend_error")
+		respondError(w, http.StatusBadGateway, "backend_error")
 		return
 	}
 	mediaType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type"))
@@ -113,10 +123,10 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 				"backend", selected.ID,
 				"content_type", response.Header.Get("Content-Type"),
 			)
-			jsonError(w, http.StatusBadGateway, "backend_error")
+			respondError(w, http.StatusBadGateway, "backend_error")
 			return
 		}
-		streamNonStreamingResponse(w, response.Body)
+		streamNonStreamingResponse(w, response.Body, respondError)
 		return
 	}
 	if err != nil || mediaType != "text/event-stream" {
@@ -124,13 +134,13 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 			"backend", selected.ID,
 			"content_type", response.Header.Get("Content-Type"),
 		)
-		jsonError(w, http.StatusBadGateway, "backend_error")
+		respondError(w, http.StatusBadGateway, "backend_error")
 		return
 	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		jsonError(w, http.StatusInternalServerError, "streaming_unsupported")
+		respondError(w, http.StatusInternalServerError, "streaming_unsupported")
 		return
 	}
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -145,10 +155,10 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func streamNonStreamingResponse(w http.ResponseWriter, body io.Reader) {
+func streamNonStreamingResponse(w http.ResponseWriter, body io.Reader, respondError errorResponder) {
 	responseBody, err := io.ReadAll(io.LimitReader(body, maxChatResponseBytes+1))
 	if err != nil || len(responseBody) > maxChatResponseBytes {
-		jsonError(w, http.StatusBadGateway, "backend_error")
+		respondError(w, http.StatusBadGateway, "backend_error")
 		return
 	}
 	var response struct {
@@ -164,12 +174,12 @@ func streamNonStreamingResponse(w http.ResponseWriter, body io.Reader) {
 	}
 	decoder := json.NewDecoder(bytes.NewReader(responseBody))
 	if err := decoder.Decode(&response); err != nil || len(response.Choices) == 0 {
-		jsonError(w, http.StatusBadGateway, "backend_error")
+		respondError(w, http.StatusBadGateway, "backend_error")
 		return
 	}
 	var trailing any
 	if err := decoder.Decode(&trailing); err != io.EOF {
-		jsonError(w, http.StatusBadGateway, "backend_error")
+		respondError(w, http.StatusBadGateway, "backend_error")
 		return
 	}
 	choice := response.Choices[0]

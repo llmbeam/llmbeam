@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/llmbeam/llmbeam/internal/connect"
 	"github.com/llmbeam/llmbeam/internal/pair"
 	"rsc.io/qr"
 )
@@ -48,6 +49,12 @@ func TestParseConfigRejectsInvalidValues(t *testing.T) {
 	}
 }
 
+func TestConnectHostHintProvidesManualMDNSFallback(t *testing.T) {
+	if got := connectHostHint(); got != "llmbeam connect --host <ip>:8442" {
+		t.Fatalf("connect host hint = %q", got)
+	}
+}
+
 func TestRunVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	if status := run([]string{"--version"}, &stdout, &stderr); status != 0 {
@@ -72,6 +79,31 @@ func TestPrintPairingWithoutQR(t *testing.T) {
 	}
 	if strings.Contains(output, "Scan with your phone") {
 		t.Fatalf("--no-qr output included QR prompt: %q", output)
+	}
+}
+
+func TestPrintConnectorCode(t *testing.T) {
+	var buffer bytes.Buffer
+	terminal := &terminalOutput{writer: &buffer}
+	terminal.printConnectorCode("K7M4QX", time.Now().Add(5*time.Minute))
+	output := buffer.String()
+	if !strings.Contains(output, "LAN connector code: K7M-4QX") || !strings.Contains(output, "llmbeam connect") {
+		t.Fatalf("connector code output = %q", output)
+	}
+}
+
+func TestPrintConnectModels(t *testing.T) {
+	var buffer bytes.Buffer
+	printConnectModels(&buffer, []connect.Model{{ID: "ollama/llama3.2"}, {ID: "llama.cpp/Qwen3-8B"}})
+	output := buffer.String()
+	if !strings.Contains(output, "Available models:") || !strings.Contains(output, "  - ollama/llama3.2") || !strings.Contains(output, "  - llama.cpp/Qwen3-8B") {
+		t.Fatalf("model output = %q", output)
+	}
+
+	buffer.Reset()
+	printConnectModels(&buffer, nil)
+	if !strings.Contains(buffer.String(), "(none currently available)") {
+		t.Fatalf("empty model output = %q", buffer.String())
 	}
 }
 
